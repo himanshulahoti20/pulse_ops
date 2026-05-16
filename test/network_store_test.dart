@@ -33,7 +33,8 @@ void main() {
 
     test('update replaces existing record by id', () {
       store.add(rec('a'));
-      store.update(rec('a').copyWith(statusCode: 200, status: NetworkStatus.success));
+      store.update(
+          rec('a').copyWith(statusCode: 200, status: NetworkStatus.success));
       expect(store.records.single.statusCode, 200);
       expect(store.records.single.status, NetworkStatus.success);
     });

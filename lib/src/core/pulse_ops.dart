@@ -77,8 +77,8 @@ class PulseOps {
     final effectiveConfig = config.copyWith(
       enableInRelease: enableInRelease ?? config.enableInRelease,
       sanitizeKeys: sanitizeKeys ?? config.sanitizeKeys,
-      captureFailedRequestsAsCrashEvents: crashlytics ??
-          config.captureFailedRequestsAsCrashEvents,
+      captureFailedRequestsAsCrashEvents:
+          crashlytics ?? config.captureFailedRequestsAsCrashEvents,
       attachNetworkHistoryToCrashes:
           crashlytics ?? config.attachNetworkHistoryToCrashes,
     );

@@ -51,9 +51,8 @@ class CrashDiagnostics {
       if (extra != null) ...extra,
       if (_config.attachNetworkHistoryToCrashes)
         'pulse_ops_recent_requests': _recentRequestSummaries(),
-      'pulse_ops_breadcrumbs': _breadcrumbs.entries
-          .map((b) => b.toMap())
-          .toList(growable: false),
+      'pulse_ops_breadcrumbs':
+          _breadcrumbs.entries.map((b) => b.toMap()).toList(growable: false),
     };
 
     try {

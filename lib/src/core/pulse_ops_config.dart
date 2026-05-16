@@ -74,9 +74,8 @@ class PulseOpsConfig {
       attachNetworkHistoryToCrashes:
           attachNetworkHistoryToCrashes ?? this.attachNetworkHistoryToCrashes,
       showOverlay: showOverlay ?? this.showOverlay,
-      captureFailedRequestsAsCrashEvents:
-          captureFailedRequestsAsCrashEvents ??
-              this.captureFailedRequestsAsCrashEvents,
+      captureFailedRequestsAsCrashEvents: captureFailedRequestsAsCrashEvents ??
+          this.captureFailedRequestsAsCrashEvents,
     );
   }
 }
