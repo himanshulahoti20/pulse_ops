@@ -5,7 +5,8 @@
 library;
 
 export 'src/core/pulse_ops.dart' show PulseOps;
-export 'src/core/pulse_ops_config.dart' show PulseOpsConfig;
+export 'src/core/pulse_ops_config.dart'
+    show PulseOpsConfig, InspectorPresentation;
 export 'src/crash/breadcrumb.dart'
     show Breadcrumb, BreadcrumbLevel, BreadcrumbTrail;
 export 'src/crash/crash_diagnostics.dart' show CrashDiagnostics;
@@ -18,4 +19,6 @@ export 'src/network/models/network_record.dart'
 export 'src/network/store/network_store.dart'
     show NetworkStore, InMemoryNetworkStore;
 export 'src/network/utils/curl_builder.dart' show CurlBuilder;
+export 'src/network/utils/log_exporter.dart'
+    show NetworkLogExporter, LogExportFormat;
 export 'src/network/utils/sanitizer.dart' show Sanitizer;

@@ -50,13 +50,15 @@ class RequestTile extends StatelessWidget {
                     const SizedBox(height: 3),
                     Row(
                       children: [
-                        Text(
-                          record.host,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: PulseTheme.textSecondary,
-                            fontSize: 11,
+                        Flexible(
+                          child: Text(
+                            record.host,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: PulseTheme.textSecondary,
+                              fontSize: 11,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 8),

@@ -67,8 +67,19 @@ class InspectorFilter {
   }
 }
 
+class InspectorFilterController extends Notifier<InspectorFilter> {
+  @override
+  InspectorFilter build() => const InspectorFilter();
+
+  void update(InspectorFilter Function(InspectorFilter) cb) {
+    state = cb(state);
+  }
+}
+
 final inspectorFilterProvider =
-    StateProvider<InspectorFilter>((ref) => const InspectorFilter());
+    NotifierProvider<InspectorFilterController, InspectorFilter>(
+  InspectorFilterController.new,
+);
 
 final filteredRecordsProvider = Provider<List<NetworkRecord>>((ref) {
   final filter = ref.watch(inspectorFilterProvider);

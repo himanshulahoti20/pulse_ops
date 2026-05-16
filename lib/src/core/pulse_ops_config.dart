@@ -1,5 +1,15 @@
 import 'package:flutter/foundation.dart';
 
+/// How the inspector is presented when the overlay launcher is tapped or
+/// [PulseOps.openInspector] is called.
+enum InspectorPresentation {
+  /// Slide up as an expandable, draggable bottom sheet (default).
+  bottomSheet,
+
+  /// Push as a full-screen dialog route.
+  fullScreen,
+}
+
 /// Configuration for the PulseOps runtime.
 ///
 /// Pass an instance to [PulseOps.initialize] to override defaults.
@@ -24,6 +34,9 @@ class PulseOpsConfig {
     this.attachNetworkHistoryToCrashes = true,
     this.showOverlay = true,
     this.captureFailedRequestsAsCrashEvents = true,
+    this.enableShakeToOpen = true,
+    this.shakeThreshold = 22.0,
+    this.inspectorPresentation = InspectorPresentation.bottomSheet,
   });
 
   /// Whether PulseOps should remain active in release builds.
@@ -57,6 +70,21 @@ class PulseOpsConfig {
   /// [PulseCrashReporter] as non-fatal errors.
   final bool captureFailedRequestsAsCrashEvents;
 
+  /// When `true`, shaking the device opens the inspector. Requires the
+  /// `sensors_plus` plugin to have an accelerometer available on the host
+  /// platform.
+  final bool enableShakeToOpen;
+
+  /// Acceleration magnitude (in m/s²) that the device must exceed to register
+  /// a shake. The default of `22.0` filters out everyday motion while still
+  /// triggering on a deliberate flick.
+  final double shakeThreshold;
+
+  /// Controls how the inspector route appears. Defaults to an expandable
+  /// bottom sheet; set to [InspectorPresentation.fullScreen] for the legacy
+  /// full-screen dialog behavior.
+  final InspectorPresentation inspectorPresentation;
+
   PulseOpsConfig copyWith({
     bool? enableInRelease,
     int? maxRecords,
@@ -65,6 +93,9 @@ class PulseOpsConfig {
     bool? attachNetworkHistoryToCrashes,
     bool? showOverlay,
     bool? captureFailedRequestsAsCrashEvents,
+    bool? enableShakeToOpen,
+    double? shakeThreshold,
+    InspectorPresentation? inspectorPresentation,
   }) {
     return PulseOpsConfig(
       enableInRelease: enableInRelease ?? this.enableInRelease,
@@ -76,6 +107,10 @@ class PulseOpsConfig {
       showOverlay: showOverlay ?? this.showOverlay,
       captureFailedRequestsAsCrashEvents: captureFailedRequestsAsCrashEvents ??
           this.captureFailedRequestsAsCrashEvents,
+      enableShakeToOpen: enableShakeToOpen ?? this.enableShakeToOpen,
+      shakeThreshold: shakeThreshold ?? this.shakeThreshold,
+      inspectorPresentation:
+          inspectorPresentation ?? this.inspectorPresentation,
     );
   }
 }
