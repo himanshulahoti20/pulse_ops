@@ -248,8 +248,7 @@ class _InspectorScreenState extends ConsumerState<InspectorScreen> {
       LogExportFormat.text => 'txt',
       LogExportFormat.curl => 'sh',
     };
-    final filename =
-        'pulse-ops-${DateTime.now().millisecondsSinceEpoch}.$ext';
+    final filename = 'pulse-ops-${DateTime.now().millisecondsSinceEpoch}.$ext';
     try {
       await SharePlus.instance.share(
         ShareParams(
