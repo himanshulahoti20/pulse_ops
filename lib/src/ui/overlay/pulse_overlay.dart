@@ -8,6 +8,101 @@ import '../../network/store/network_store.dart';
 import '../../providers/providers.dart';
 import '../inspector/inspector_screen.dart';
 import '../theme/pulse_theme.dart';
+import 'shake_detector.dart';
+
+/// Presents the inspector for [PulseOverlay] and [PulseOps.openInspector]
+/// using the strategy configured in [PulseOpsConfig.inspectorPresentation].
+Future<void> showPulseInspector(
+  BuildContext context, {
+  required PulseOpsConfig config,
+  required NetworkStore store,
+  required CrashDiagnostics crashDiagnostics,
+  Dio? retryDio,
+}) {
+  final navigator = Navigator.of(context, rootNavigator: true);
+  final overrides = [
+    pulseOpsConfigProvider.overrideWithValue(config),
+    networkStoreProvider.overrideWithValue(store),
+    crashDiagnosticsProvider.overrideWithValue(crashDiagnostics),
+  ];
+
+  if (config.inspectorPresentation == InspectorPresentation.fullScreen) {
+    return navigator.push(
+      MaterialPageRoute<void>(
+        fullscreenDialog: true,
+        builder: (_) => ProviderScope(
+          overrides: overrides,
+          child: Theme(
+            data: PulseTheme.build(),
+            child: InspectorScreen(retryDio: retryDio),
+          ),
+        ),
+      ),
+    );
+  }
+
+  return showModalBottomSheet<void>(
+    context: navigator.context,
+    isScrollControlled: true,
+    useRootNavigator: true,
+    backgroundColor: Colors.transparent,
+    barrierColor: Colors.black.withValues(alpha: 0.6),
+    builder: (_) => ProviderScope(
+      overrides: overrides,
+      child: Theme(
+        data: PulseTheme.build(),
+        child: _InspectorSheet(retryDio: retryDio),
+      ),
+    ),
+  );
+}
+
+class _InspectorSheet extends StatelessWidget {
+  const _InspectorSheet({this.retryDio});
+
+  final Dio? retryDio;
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      expand: false,
+      initialChildSize: 0.7,
+      minChildSize: 0.4,
+      maxChildSize: 0.95,
+      snap: true,
+      snapSizes: const [0.4, 0.7, 0.95],
+      builder: (context, scrollController) {
+        return ClipRRect(
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(20),
+          ),
+          child: ColoredBox(
+            color: PulseTheme.background,
+            child: Column(
+              children: [
+                Container(
+                  margin: const EdgeInsets.only(top: 8, bottom: 4),
+                  height: 4,
+                  width: 44,
+                  decoration: BoxDecoration(
+                    color: PulseTheme.border,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                Expanded(
+                  child: InspectorScreen(
+                    retryDio: retryDio,
+                    scrollController: scrollController,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
 
 /// Draggable, dismissible floating launcher that opens the inspector.
 class PulseOverlay extends StatefulWidget {
@@ -32,50 +127,62 @@ class PulseOverlay extends StatefulWidget {
 
 class _PulseOverlayState extends State<PulseOverlay> {
   Offset _offset = const Offset(20, 200);
+  bool _inspectorOpen = false;
 
   @override
   Widget build(BuildContext context) {
-    if (!widget.config.showOverlay) return widget.child;
-    return Stack(
-      children: [
-        widget.child,
-        Positioned(
-          left: _offset.dx,
-          top: _offset.dy,
-          child: GestureDetector(
-            onPanUpdate: (details) {
-              final size = MediaQuery.of(context).size;
-              setState(() {
-                _offset = Offset(
-                  (_offset.dx + details.delta.dx).clamp(8.0, size.width - 64),
-                  (_offset.dy + details.delta.dy).clamp(40.0, size.height - 80),
-                );
-              });
-            },
-            child: _OverlayButton(onTap: _open),
-          ),
+    Widget tree = widget.child;
+    if (widget.config.showOverlay) {
+      tree = Directionality(
+        textDirection: TextDirection.ltr,
+        child: Stack(
+          textDirection: TextDirection.ltr,
+          children: [
+            tree,
+            Positioned(
+              left: _offset.dx,
+              top: _offset.dy,
+              child: GestureDetector(
+                onPanUpdate: (details) {
+                  final size = MediaQuery.of(context).size;
+                  setState(() {
+                    _offset = Offset(
+                      (_offset.dx + details.delta.dx)
+                          .clamp(8.0, size.width - 64),
+                      (_offset.dy + details.delta.dy)
+                          .clamp(40.0, size.height - 80),
+                    );
+                  });
+                },
+                child: _OverlayButton(onTap: _open),
+              ),
+            ),
+          ],
         ),
-      ],
+      );
+    }
+    return ShakeDetector(
+      enabled: widget.config.enableShakeToOpen,
+      threshold: widget.config.shakeThreshold,
+      onShake: _open,
+      child: tree,
     );
   }
 
-  void _open() {
-    Navigator.of(context, rootNavigator: true).push(
-      MaterialPageRoute<void>(
-        fullscreenDialog: true,
-        builder: (_) => ProviderScope(
-          overrides: [
-            pulseOpsConfigProvider.overrideWithValue(widget.config),
-            networkStoreProvider.overrideWithValue(widget.store),
-            crashDiagnosticsProvider.overrideWithValue(widget.crashDiagnostics),
-          ],
-          child: Theme(
-            data: PulseTheme.build(),
-            child: InspectorScreen(retryDio: widget.retryDio),
-          ),
-        ),
-      ),
-    );
+  Future<void> _open() async {
+    if (_inspectorOpen || !mounted) return;
+    _inspectorOpen = true;
+    try {
+      await showPulseInspector(
+        context,
+        config: widget.config,
+        store: widget.store,
+        crashDiagnostics: widget.crashDiagnostics,
+        retryDio: widget.retryDio,
+      );
+    } finally {
+      _inspectorOpen = false;
+    }
   }
 }
 

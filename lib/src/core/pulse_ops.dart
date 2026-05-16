@@ -9,9 +9,7 @@ import '../crash/crash_reporter.dart';
 import '../network/interceptor/pulse_dio_interceptor.dart';
 import '../network/store/network_store.dart';
 import '../providers/providers.dart';
-import '../ui/inspector/inspector_screen.dart';
 import '../ui/overlay/pulse_overlay.dart';
-import '../ui/theme/pulse_theme.dart';
 import 'pulse_ops_config.dart';
 
 /// Entry point for the PulseOps SDK.
@@ -144,21 +142,12 @@ class PulseOps {
   /// Imperatively push the inspector. Useful when the overlay is disabled or
   /// you want to surface the inspector from a debug menu.
   Future<void> openInspector(BuildContext context, {Dio? retryDio}) {
-    return Navigator.of(context, rootNavigator: true).push(
-      PageRouteBuilder<void>(
-        fullscreenDialog: true,
-        pageBuilder: (_, __, ___) => ProviderScope(
-          overrides: [
-            pulseOpsConfigProvider.overrideWithValue(config),
-            networkStoreProvider.overrideWithValue(store),
-            crashDiagnosticsProvider.overrideWithValue(crashDiagnostics),
-          ],
-          child: Theme(
-            data: PulseTheme.build(),
-            child: InspectorScreen(retryDio: retryDio),
-          ),
-        ),
-      ),
+    return showPulseInspector(
+      context,
+      config: config,
+      store: store,
+      crashDiagnostics: crashDiagnostics,
+      retryDio: retryDio,
     );
   }
 

@@ -4,6 +4,29 @@ All notable changes to **PulseOps** will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/) and
 this project adheres to [Semantic Versioning](https://semver.org/).
 
+## 1.1.0 — 2026-05-16
+
+### 🛠 Debug Overlay
+
+- **Shake-to-open**: shaking the device launches the inspector. Tunable via
+  `PulseOpsConfig.enableShakeToOpen` and `shakeThreshold`. Powered by
+  `sensors_plus` and silently no-ops when an accelerometer is unavailable.
+- **Expandable bottom sheet**: the inspector now slides up as a draggable
+  bottom sheet with 40 / 70 / 95 % snap points instead of a full-screen
+  route. Switch back via
+  `PulseOpsConfig(inspectorPresentation: InspectorPresentation.fullScreen)`.
+
+### ✨ Developer Experience
+
+- **Log export**: new export menu in the inspector (JSON / plain text / cURL)
+  that opens the platform share sheet via `share_plus` and falls back to
+  clipboard. Programmatic exports available via `NetworkLogExporter`.
+
+### Migration
+
+- `PulseOps.openInspector` now respects `inspectorPresentation`. Existing
+  callers continue to work unchanged.
+
 ## 1.0.0 — 2026-05-16
 
 Initial public release.

@@ -1,8 +1,23 @@
-# PulseOps
+# pulse_ops
+
+[![pub version](https://img.shields.io/pub/v/pulse_ops.svg)](https://pub.dev/packages/pulse_ops)
+[![pub points](https://img.shields.io/pub/points/pulse_ops)](https://pub.dev/packages/pulse_ops/score)
+[![pub likes](https://img.shields.io/pub/likes/pulse_ops)](https://pub.dev/packages/pulse_ops/score)
+[![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+![CI](https://github.com/himanshulahoti20/pulse_ops/actions/workflows/dart_ci.yml/badge.svg?branch=main&cache_bust=1)
+
 
 > A modern, Flutter-native developer toolkit for **in-app network inspection**
 > and **crash diagnostics** — designed as a lightweight alternative to
 > Chucker / Pulse / Stetho, with a beautiful dark Material 3 UI.
+
+<p align="center">
+  <img
+    src="https://raw.githubusercontent.com/himanshulahoti20/pulse_ops/main/doc/demo.gif"
+    alt="PulseOps in action — floating launcher, expandable inspector, cURL export, and log sharing"
+    width="320"
+  />
+</p>
 
 PulseOps ships with two focused capabilities in v1.0:
 
@@ -40,7 +55,7 @@ PulseOps ships with two focused capabilities in v1.0:
 
 ```yaml
 dependencies:
-  pulse_ops: ^1.0.0
+  pulse_ops: ^1.1.0
   dio: ^5.4.0
 ```
 
