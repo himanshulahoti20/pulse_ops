@@ -67,8 +67,7 @@ class _PulseOverlayState extends State<PulseOverlay> {
           overrides: [
             pulseOpsConfigProvider.overrideWithValue(widget.config),
             networkStoreProvider.overrideWithValue(widget.store),
-            crashDiagnosticsProvider
-                .overrideWithValue(widget.crashDiagnostics),
+            crashDiagnosticsProvider.overrideWithValue(widget.crashDiagnostics),
           ],
           child: Theme(
             data: PulseTheme.build(),

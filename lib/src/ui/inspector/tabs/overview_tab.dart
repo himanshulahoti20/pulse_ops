@@ -148,7 +148,8 @@ class _Card extends StatelessWidget {
           color: accent?.withValues(alpha: 0.4) ?? PulseTheme.border,
         ),
       ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: children),
+      child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start, children: children),
     );
   }
 }

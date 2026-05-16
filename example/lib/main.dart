@@ -71,7 +71,8 @@ class _HomeScreen extends StatelessWidget {
       reason: 'demo button',
     );
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Reported a non-fatal to the crash backend')),
+      const SnackBar(
+          content: Text('Reported a non-fatal to the crash backend')),
     );
   }
 
@@ -92,9 +93,11 @@ class _HomeScreen extends StatelessWidget {
             const SizedBox(height: 8),
             FilledButton(onPressed: _post, child: const Text('POST /posts')),
             const SizedBox(height: 8),
-            FilledButton(onPressed: _failing, child: const Text('Failing GET (404)')),
+            FilledButton(
+                onPressed: _failing, child: const Text('Failing GET (404)')),
             const SizedBox(height: 8),
-            FilledButton(onPressed: _multipart, child: const Text('Multipart upload')),
+            FilledButton(
+                onPressed: _multipart, child: const Text('Multipart upload')),
             const SizedBox(height: 24),
             OutlinedButton(
               onPressed: () => _crash(context),
@@ -102,7 +105,8 @@ class _HomeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             OutlinedButton(
-              onPressed: () => PulseOps.instance.openInspector(context, retryDio: dio),
+              onPressed: () =>
+                  PulseOps.instance.openInspector(context, retryDio: dio),
               child: const Text('Open Inspector'),
             ),
           ],

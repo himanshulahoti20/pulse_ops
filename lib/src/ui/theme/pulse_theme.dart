@@ -49,8 +49,7 @@ class PulseTheme {
         bodyMedium: TextStyle(color: textPrimary),
         bodySmall: TextStyle(color: textSecondary),
         labelLarge: TextStyle(color: textPrimary, fontWeight: FontWeight.w600),
-        titleMedium:
-            TextStyle(color: textPrimary, fontWeight: FontWeight.w600),
+        titleMedium: TextStyle(color: textPrimary, fontWeight: FontWeight.w600),
       ).apply(fontFamily: 'monospace'),
       appBarTheme: const AppBarTheme(
         backgroundColor: background,

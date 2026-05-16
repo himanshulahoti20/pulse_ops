@@ -52,7 +52,9 @@ class StatusChip extends StatelessWidget {
   }
 
   Color _color() {
-    if (record.status == NetworkStatus.cancelled) return PulseTheme.textSecondary;
+    if (record.status == NetworkStatus.cancelled) {
+      return PulseTheme.textSecondary;
+    }
     if (record.status == NetworkStatus.error && record.statusCode == null) {
       return PulseTheme.error;
     }

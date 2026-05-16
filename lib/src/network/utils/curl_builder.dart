@@ -36,8 +36,8 @@ class CurlBuilder {
     try {
       final uri = Uri.parse(r.url);
       if (uri.hasQuery) return r.url;
-      final merged =
-          uri.replace(queryParameters: r.queryParameters.map(
+      final merged = uri.replace(
+          queryParameters: r.queryParameters.map(
         (k, v) => MapEntry(k, v?.toString() ?? ''),
       ));
       return merged.toString();
