@@ -4,6 +4,26 @@ All notable changes to **PulseOps** will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/) and
 this project adheres to [Semantic Versioning](https://semver.org/).
 
+## 1.1.1 — 2026-05-21
+
+### 🐛 Bug Fixes
+
+- Fixed `No Directionality widget found` crash on Android and iOS when the
+  `PulseOverlay` `Stack` was mounted above the host app's `MaterialApp`.
+  The overlay now wraps the `Stack` in an explicit `Directionality(ltr)`.
+- Fixed `RenderFlex overflowed` yellow-stripe in `RequestTile` when the host
+  name is long (e.g. `jsonplaceholder.typicode.com`). The host `Text` is now
+  wrapped in `Flexible` so it ellipsises instead of overflowing.
+
+### 📚 Documentation
+
+- Added a **Sentry adapter** code snippet to the README — drop-in equivalent
+  of the existing Firebase Crashlytics adapter. Covers non-fatal, fatal,
+  breadcrumbs, network history, and custom tags via `Sentry.configureScope`.
+- Updated CI workflow (`publish.yml`) to use `flutter pub get`,
+  `flutter analyze`, and `flutter test` instead of their bare `dart` equivalents,
+  fixing the *"Flutter users should use flutter pub"* error in GitHub Actions.
+
 ## 1.1.0 — 2026-05-16
 
 ### 🛠 Debug Overlay

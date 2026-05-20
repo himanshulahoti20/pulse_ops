@@ -11,7 +11,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-
     steps:
       - uses: actions/checkout@v4
         with:
@@ -22,50 +21,39 @@ jobs:
         run: |
           NEW=$(grep '^version:' pubspec.yaml | sed 's/version: *//' | tr -d ' ')
           OLD=$(git show HEAD~1:pubspec.yaml 2>/dev/null | grep '^version:' | sed 's/version: *//' | tr -d ' ' || echo "")
-
           if [ -z "$NEW" ] || [ "$NEW" = "$OLD" ] || git rev-parse "v$NEW" >/dev/null 2>&1; then
-            echo "Nothing to tag"
-            exit 0
+            echo "Nothing to tag"; exit 0
           fi
-
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-
           git tag -a "v$NEW" -m "Release v$NEW"
           git push origin "v$NEW"
 
   publish:
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
-
     permissions:
       id-token: write
-
     steps:
       - uses: actions/checkout@v4
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@v2
         with:
           channel: stable
-
-      - name: Flutter version
-        run: flutter --version
 
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Analyze
+      - name: Analyze (VERY important for score)
         run: flutter analyze
 
       - name: Run tests
         run: flutter test
 
-      - name: Ensure pub outdated JSON works
-        run: flutter pub outdated --json > /dev/null
+      - name: Ensure pub outdated JSON works (CRITICAL)
+        run: dart pub outdated --json > /dev/null
 
       - name: Dry run publish
-        run: flutter pub publish --dry-run
+        run: dart pub publish --dry-run
 
       - name: Publish
-        run: flutter pub publish --force
+        run: dart pub publish --force

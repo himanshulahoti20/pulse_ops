@@ -2,7 +2,7 @@ name: pulse_ops
 description: >-
   Flutter-native developer toolkit for in-app network inspection, cURL export,
   log sharing, shake-to-open, and crash diagnostics with breadcrumbs.
-version: 1.1.0
+version: 1.1.1
 homepage: https://github.com/himanshulahoti20/pulse_ops
 repository: https://github.com/himanshulahoti20/pulse_ops
 issue_tracker: https://github.com/himanshulahoti20/pulse_ops/issues
