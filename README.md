@@ -193,6 +193,91 @@ await PulseOps.initialize(
 );
 ```
 
+### Example adapter for Sentry
+
+```dart
+import 'package:pulse_ops/pulse_ops.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
+
+class SentryCrashReporterAdapter implements PulseCrashReporter {
+  const SentryCrashReporterAdapter();
+
+  @override
+  Future<void> recordNonFatal(Object error,
+      {StackTrace? stackTrace, String? reason, Map<String, dynamic>? context}) async {
+    await Sentry.captureException(
+      error,
+      stackTrace: stackTrace,
+      hint: Hint.withMap({
+        if (reason != null) 'reason': reason,
+        if (context != null) ...context,
+      }),
+    );
+  }
+
+  @override
+  Future<void> recordFatal(Object error,
+      {StackTrace? stackTrace, Map<String, dynamic>? context}) async {
+    await Sentry.captureException(
+      error,
+      stackTrace: stackTrace,
+      withScope: (scope) => scope.setTag('fatal', 'true'),
+    );
+  }
+
+  @override
+  Future<void> attachBreadcrumbs(List<Breadcrumb> breadcrumbs) async {
+    for (final b in breadcrumbs) {
+      await Sentry.addBreadcrumb(
+        SentryBreadcrumb(
+          message: b.message,
+          level: _sentryLevel(b.level),
+          timestamp: b.timestamp,
+          data: b.data,
+        ),
+      );
+    }
+  }
+
+  @override
+  Future<void> attachNetworkHistory(List<NetworkRecord> records) async {
+    final summary = records.take(20).map((r) =>
+        '${r.method} ${r.endpoint} -> ${r.statusCode ?? r.status.name}').join('\n');
+    await Sentry.configureScope(
+      (scope) => scope.setContexts('pulse_ops_recent_requests', {'log': summary}),
+    );
+  }
+
+  @override
+  Future<void> setCustomKey(String key, Object value) async {
+    await Sentry.configureScope((scope) => scope.setTag(key, value.toString()));
+  }
+
+  SentryLevel _sentryLevel(BreadcrumbLevel level) {
+    switch (level) {
+      case BreadcrumbLevel.debug:   return SentryLevel.debug;
+      case BreadcrumbLevel.info:    return SentryLevel.info;
+      case BreadcrumbLevel.warning: return SentryLevel.warning;
+      case BreadcrumbLevel.error:   return SentryLevel.error;
+    }
+  }
+}
+```
+
+Then initialize Sentry first, then PulseOps:
+
+```dart
+await SentryFlutter.init(
+  (options) => options.dsn = 'YOUR_DSN',
+  appRunner: () async {
+    await PulseOps.initialize(
+      crashReporter: const SentryCrashReporterAdapter(),
+    );
+    runApp(PulseOps.instance.wrap(child: MyApp()));
+  },
+);
+```
+
 ### What gets attached to crashes
 
 Whenever an error is reported through PulseOps — automatically for failed
