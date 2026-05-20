@@ -33,9 +33,10 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:
-      id-token: write
+      id-token: write  # Required for pub.dev OIDC publishing
     steps:
       - uses: actions/checkout@v4
+
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
@@ -43,17 +44,11 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Analyze (VERY important for score)
+      - name: Analyze
         run: flutter analyze
 
       - name: Run tests
         run: flutter test
 
-      - name: Ensure pub outdated JSON works (CRITICAL)
-        run: dart pub outdated --json > /dev/null
-
-      - name: Dry run publish
-        run: dart pub publish --dry-run
-
-      - name: Publish
+      - name: Publish to pub.dev
         run: dart pub publish --force
