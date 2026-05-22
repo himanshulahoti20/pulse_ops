@@ -4,14 +4,9 @@
 [![pub version](https://img.shields.io/pub/v/pulse_ops.svg)](https://pub.dev/packages/pulse_ops)
 [![pub points](https://img.shields.io/pub/points/pulse_ops)](https://pub.dev/packages/pulse_ops/score)
 [![pub likes](https://img.shields.io/pub/likes/pulse_ops)](https://pub.dev/packages/pulse_ops/score)
-[![pub popularity](https://img.shields.io/pub/popularity/pulse_ops)](https://pub.dev/packages/pulse_ops/score)
 
 <!-- GitHub -->
 ![CI](https://github.com/himanshulahoti20/pulse_ops/actions/workflows/dart_ci.yml/badge.svg?branch=main&cache_bust=1)
-[![GitHub stars](https://img.shields.io/github/stars/himanshulahoti20/pulse_ops?style=flat&logo=github&label=stars)](https://github.com/himanshulahoti20/pulse_ops/stargazers)
-[![GitHub issues](https://img.shields.io/github/issues/himanshulahoti20/pulse_ops)](https://github.com/himanshulahoti20/pulse_ops/issues)
-[![GitHub last commit](https://img.shields.io/github/last-commit/himanshulahoti20/pulse_ops)](https://github.com/himanshulahoti20/pulse_ops/commits/main)
-[![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/himanshulahoti20/pulse_ops/pulls)
 [![Sponsor](https://img.shields.io/github/sponsors/himanshulahoti20?label=Sponsor&logo=GitHub)](https://github.com/sponsors/himanshulahoti20)
 
 <!-- tech -->
