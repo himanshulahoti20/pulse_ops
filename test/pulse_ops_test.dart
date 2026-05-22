@@ -2,6 +2,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pulse_ops/pulse_ops.dart';
 
 void main() {
+  // FpsTracker calls WidgetsBinding.instance — binding must be initialised
+  // before any test that calls PulseOps.initialize().
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('PulseOps facade', () {
     tearDown(() => PulseOps.reset());
 
