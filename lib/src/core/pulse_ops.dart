@@ -104,8 +104,8 @@ class PulseOps {
       breadcrumbs: breadcrumbs,
     );
 
-    final perfStore = PerformanceStore(
-        maxFrames: effectiveConfig.fpsFrameBufferSize);
+    final perfStore =
+        PerformanceStore(maxFrames: effectiveConfig.fpsFrameBufferSize);
     perfStore.markInit();
 
     if (installGlobalErrorHandlers && enabled) {

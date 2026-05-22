@@ -105,10 +105,9 @@ class InspectorFilter {
     }
     if (search.isNotEmpty) {
       final q = search.toLowerCase();
-      final haystack =
-          '${r.method} ${r.url} ${r.host} ${r.statusCode ?? ''} '
-                  '${r.error ?? ''}'
-              .toLowerCase();
+      final haystack = '${r.method} ${r.url} ${r.host} ${r.statusCode ?? ''} '
+              '${r.error ?? ''}'
+          .toLowerCase();
       if (!haystack.contains(q)) return false;
     }
     return true;

@@ -22,8 +22,14 @@ class LatencyChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final completed =
-        records.where((r) => r.endedAt != null).toList().reversed.take(maxBars).toList().reversed.toList();
+    final completed = records
+        .where((r) => r.endedAt != null)
+        .toList()
+        .reversed
+        .take(maxBars)
+        .toList()
+        .reversed
+        .toList();
     return SizedBox(
       height: height,
       child: CustomPaint(

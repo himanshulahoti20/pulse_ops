@@ -130,10 +130,12 @@ class PerformanceScreen extends ConsumerWidget {
                 child: _StatCard(
                   icon: Icons.hourglass_top_rounded,
                   label: 'Slow requests',
-                  value: '${_slowCount(allRecords, config.slowRequestThresholdMs)}',
-                  color: _slowCount(allRecords, config.slowRequestThresholdMs) == 0
-                      ? PulseTheme.success
-                      : PulseTheme.warning,
+                  value:
+                      '${_slowCount(allRecords, config.slowRequestThresholdMs)}',
+                  color:
+                      _slowCount(allRecords, config.slowRequestThresholdMs) == 0
+                          ? PulseTheme.success
+                          : PulseTheme.warning,
                 ),
               ),
             ],
@@ -155,8 +157,7 @@ class PerformanceScreen extends ConsumerWidget {
 
   String _avgLatency(List<NetworkRecord> records) {
     if (records.isEmpty) return '— ms';
-    final completed =
-        records.where((r) => r.endedAt != null).toList();
+    final completed = records.where((r) => r.endedAt != null).toList();
     if (completed.isEmpty) return '— ms';
     final avg = completed
             .map((r) => r.duration.inMilliseconds)
@@ -165,8 +166,10 @@ class PerformanceScreen extends ConsumerWidget {
     return '$avg ms';
   }
 
-  int _slowCount(List<NetworkRecord> records, int thresholdMs) =>
-      records.where((r) => r.endedAt != null && r.duration.inMilliseconds >= thresholdMs).length;
+  int _slowCount(List<NetworkRecord> records, int thresholdMs) => records
+      .where(
+          (r) => r.endedAt != null && r.duration.inMilliseconds >= thresholdMs)
+      .length;
 }
 
 // ── Frame drop list ──────────────────────────────────────────────────────────
@@ -187,8 +190,7 @@ class _FrameDropList extends StatelessWidget {
       child: Column(
         children: [
           for (var i = 0; i < drops.length; i++) ...[
-            if (i > 0)
-              const Divider(height: 1, color: PulseTheme.border),
+            if (i > 0) const Divider(height: 1, color: PulseTheme.border),
             _DropRow(frame: drops[i]),
           ],
         ],
