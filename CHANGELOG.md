@@ -4,6 +4,32 @@ All notable changes to **PulseOps** will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/) and
 this project adheres to [Semantic Versioning](https://semver.org/).
 
+## 1.2.0 — 2026-05-22
+
+### ⚡ Performance Monitoring
+
+- **Real-time FPS monitor** — subscribes to `WidgetsBinding` frame timings and
+  streams FPS data into a rolling 300-frame ring buffer.
+- **Frame drop & jank detection** — frames exceeding 16 ms are flagged as
+  dropped; frames exceeding 33 ms are marked severe jank.
+- **Startup time tracking** — measures wall-clock time from `PulseOps.initialize`
+  to the first rendered frame.
+- **API latency chart** — `CustomPainter` bar chart showing the last 40 request
+  durations, coloured green / yellow / red against the slow-request threshold.
+- **FPS sparkline chart** — gradient-filled line chart with 60 fps / 30 fps
+  reference grid lines, coloured by current FPS health.
+- **Performance screen** accessible from the inspector toolbar (`⚡` button),
+  showing startup banner, FPS stats, frame drop list, and latency charts.
+
+### 🔍 Inspector Improvements
+
+- **Slow filter chip** — one-tap filter to show only requests that exceeded the
+  configured `slowRequestThresholdMs`.
+- **Status-family filter chips** — filter by `2xx`, `3xx`, `4xx`, or `5xx`
+  response families.
+- **Wider search** — search now matches against host name and error message in
+  addition to URL, method, and status code.
+
 ## 1.1.1 — 2026-05-21
 
 ### 🐛 Bug Fixes

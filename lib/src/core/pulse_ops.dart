@@ -8,6 +8,8 @@ import '../crash/crash_diagnostics.dart';
 import '../crash/crash_reporter.dart';
 import '../network/interceptor/pulse_dio_interceptor.dart';
 import '../network/store/network_store.dart';
+import '../performance/fps_tracker.dart';
+import '../performance/performance_store.dart';
 import '../providers/providers.dart';
 import '../ui/overlay/pulse_overlay.dart';
 import 'pulse_ops_config.dart';
@@ -28,6 +30,7 @@ class PulseOps {
     required this.breadcrumbs,
     required this.dioInterceptor,
     required this.enabled,
+    required this.performanceStore,
   });
 
   static PulseOps? _instance;
@@ -51,6 +54,7 @@ class PulseOps {
   final CrashDiagnostics crashDiagnostics;
   final BreadcrumbTrail breadcrumbs;
   final PulseDioInterceptor dioInterceptor;
+  final PerformanceStore performanceStore;
 
   /// `false` when running in release mode without [PulseOpsConfig.enableInRelease].
   /// In that state PulseOps becomes a no-op shell so production builds pay
@@ -100,8 +104,16 @@ class PulseOps {
       breadcrumbs: breadcrumbs,
     );
 
+    final perfStore =
+        PerformanceStore(maxFrames: effectiveConfig.fpsFrameBufferSize);
+    perfStore.markInit();
+
     if (installGlobalErrorHandlers && enabled) {
       diagnostics.installGlobalErrorHandlers();
+    }
+
+    if (enabled && effectiveConfig.enableFpsMonitor) {
+      FpsTracker(perfStore).start();
     }
 
     _instance = PulseOps._(
@@ -111,6 +123,7 @@ class PulseOps {
       breadcrumbs: breadcrumbs,
       dioInterceptor: interceptor,
       enabled: enabled,
+      performanceStore: perfStore,
     );
 
     return _instance!;
@@ -128,11 +141,13 @@ class PulseOps {
         pulseOpsConfigProvider.overrideWithValue(config),
         networkStoreProvider.overrideWithValue(store),
         crashDiagnosticsProvider.overrideWithValue(crashDiagnostics),
+        performanceStoreProvider.overrideWithValue(performanceStore),
       ],
       child: PulseOverlay(
         config: config,
         store: store,
         crashDiagnostics: crashDiagnostics,
+        performanceStore: performanceStore,
         retryDio: retryDio,
         child: child,
       ),
@@ -147,6 +162,7 @@ class PulseOps {
       config: config,
       store: store,
       crashDiagnostics: crashDiagnostics,
+      performanceStore: performanceStore,
       retryDio: retryDio,
     );
   }
@@ -179,6 +195,7 @@ class PulseOps {
   @visibleForTesting
   static Future<void> reset() async {
     _instance?.store.dispose();
+    _instance?.performanceStore.dispose();
     _instance = null;
   }
 }

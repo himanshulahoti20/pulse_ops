@@ -22,3 +22,5 @@ export 'src/network/utils/curl_builder.dart' show CurlBuilder;
 export 'src/network/utils/log_exporter.dart'
     show NetworkLogExporter, LogExportFormat;
 export 'src/network/utils/sanitizer.dart' show Sanitizer;
+export 'src/performance/frame_metric.dart' show FrameMetric;
+export 'src/performance/performance_store.dart' show PerformanceStore;

@@ -7,6 +7,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../network/models/network_record.dart';
 import '../../network/utils/log_exporter.dart';
 import '../../providers/providers.dart';
+import '../performance/performance_screen.dart';
 import '../theme/pulse_theme.dart';
 import 'request_details_screen.dart';
 import 'widgets/empty_state.dart';
@@ -55,6 +56,18 @@ class _InspectorScreenState extends ConsumerState<InspectorScreen> {
       appBar: AppBar(
         title: const Text('PulseOps'),
         actions: [
+          IconButton(
+            tooltip: 'Performance',
+            icon: const Icon(Icons.speed_rounded),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => Theme(
+                  data: Theme.of(context),
+                  child: const PerformanceScreen(),
+                ),
+              ),
+            ),
+          ),
           IconButton(
             tooltip: 'Export logs',
             icon: const Icon(Icons.ios_share_rounded),
@@ -121,11 +134,15 @@ class _InspectorScreenState extends ConsumerState<InspectorScreen> {
                       .update((s) => s.copyWith(failedOnly: !s.failedOnly)),
                 ),
                 const SizedBox(width: 8),
-                Container(
-                  width: 1,
-                  margin: const EdgeInsets.symmetric(vertical: 8),
-                  color: PulseTheme.border,
+                _FilterChip(
+                  label: 'Slow',
+                  selected: filter.slowOnly,
+                  onTap: () => ref
+                      .read(inspectorFilterProvider.notifier)
+                      .update((s) => s.copyWith(slowOnly: !s.slowOnly)),
                 ),
+                const SizedBox(width: 8),
+                const _Divider(),
                 const SizedBox(width: 8),
                 for (final m in _methods) ...[
                   _FilterChip(
@@ -138,6 +155,27 @@ class _InspectorScreenState extends ConsumerState<InspectorScreen> {
                       }
                       return s.copyWith(method: m);
                     }),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                const _Divider(),
+                const SizedBox(width: 8),
+                for (final family in [
+                  StatusFamily.s2xx,
+                  StatusFamily.s3xx,
+                  StatusFamily.s4xx,
+                  StatusFamily.s5xx,
+                ]) ...[
+                  _FilterChip(
+                    label: _familyLabel(family),
+                    selected: filter.statusFamily == family,
+                    onTap: () => ref
+                        .read(inspectorFilterProvider.notifier)
+                        .update((s) => s.copyWith(
+                              statusFamily: s.statusFamily == family
+                                  ? StatusFamily.all
+                                  : family,
+                            )),
                   ),
                   const SizedBox(width: 8),
                 ],
@@ -305,6 +343,25 @@ class _ExportTile extends StatelessWidget {
       onTap: onTap,
     );
   }
+}
+
+String _familyLabel(StatusFamily f) => switch (f) {
+      StatusFamily.s2xx => '2xx',
+      StatusFamily.s3xx => '3xx',
+      StatusFamily.s4xx => '4xx',
+      StatusFamily.s5xx => '5xx',
+      StatusFamily.all => 'All',
+    };
+
+class _Divider extends StatelessWidget {
+  const _Divider();
+
+  @override
+  Widget build(BuildContext context) => Container(
+        width: 1,
+        margin: const EdgeInsets.symmetric(vertical: 8),
+        color: PulseTheme.border,
+      );
 }
 
 class _FilterChip extends StatelessWidget {
