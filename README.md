@@ -1,16 +1,30 @@
 # pulse_ops
 
+<!-- pub.dev -->
 [![pub version](https://img.shields.io/pub/v/pulse_ops.svg)](https://pub.dev/packages/pulse_ops)
 [![pub points](https://img.shields.io/pub/points/pulse_ops)](https://pub.dev/packages/pulse_ops/score)
 [![pub likes](https://img.shields.io/pub/likes/pulse_ops)](https://pub.dev/packages/pulse_ops/score)
-[![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![pub popularity](https://img.shields.io/pub/popularity/pulse_ops)](https://pub.dev/packages/pulse_ops/score)
+
+<!-- GitHub -->
 ![CI](https://github.com/himanshulahoti20/pulse_ops/actions/workflows/dart_ci.yml/badge.svg?branch=main&cache_bust=1)
+[![GitHub stars](https://img.shields.io/github/stars/himanshulahoti20/pulse_ops?style=flat&logo=github&label=stars)](https://github.com/himanshulahoti20/pulse_ops/stargazers)
+[![GitHub issues](https://img.shields.io/github/issues/himanshulahoti20/pulse_ops)](https://github.com/himanshulahoti20/pulse_ops/issues)
+[![GitHub last commit](https://img.shields.io/github/last-commit/himanshulahoti20/pulse_ops)](https://github.com/himanshulahoti20/pulse_ops/commits/main)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/himanshulahoti20/pulse_ops/pulls)
 [![Sponsor](https://img.shields.io/github/sponsors/himanshulahoti20?label=Sponsor&logo=GitHub)](https://github.com/sponsors/himanshulahoti20)
 
+<!-- tech -->
+[![Flutter ≥3.10](https://img.shields.io/badge/flutter-%E2%89%A53.10-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
+[![Dart ≥3.0](https://img.shields.io/badge/dart-%E2%89%A53.0-0175C2?logo=dart&logoColor=white)](https://dart.dev)
+[![platforms](https://img.shields.io/badge/platform-android%20%7C%20ios%20%7C%20macos%20%7C%20web%20%7C%20linux%20%7C%20windows-lightgrey)](https://pub.dev/packages/pulse_ops)
+[![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-> A modern, Flutter-native developer toolkit for **in-app network inspection**
-> and **crash diagnostics** — designed as a lightweight alternative to
-> Chucker / Pulse / Stetho, with a beautiful dark Material 3 UI.
+
+> A modern, Flutter-native developer toolkit for **in-app network inspection**,
+> **performance monitoring**, and **crash diagnostics** — designed as a
+> lightweight alternative to Chucker / Pulse / Stetho, with a beautiful dark
+> Material 3 UI.
 
 <p align="center">
   <img
@@ -20,12 +34,15 @@
   />
 </p>
 
-PulseOps ships with two focused capabilities in v1.0:
+PulseOps ships with three focused capabilities:
 
 1. **🌐 Network Inspector** — a Dio interceptor that records every request,
    pretty-prints JSON, exports cURL, retries calls, and presents it all in a
    developer-grade dark inspector.
-2. **💥 Crash Diagnostics** — pluggable bridge to Firebase Crashlytics (or any
+2. **⚡ Performance Monitoring** — real-time FPS tracking, frame drop & jank
+   detection, startup time measurement, and API latency charts — all with zero
+   extra dependencies.
+3. **💥 Crash Diagnostics** — pluggable bridge to Firebase Crashlytics (or any
    backend) with rich breadcrumbs and automatic attachment of recent API
    activity to every crash report.
 
@@ -37,9 +54,14 @@ PulseOps ships with two focused capabilities in v1.0:
   syntax highlighting
 - 🔌 **One-line Dio integration** — works with `GET`, `POST`, `PUT`, `PATCH`,
   `DELETE`, and `multipart/form-data`
-- 🔍 **Search, filter by method, "failed only"** filter
+- 🔍 **Search, filter by method / status family / slow / failed** — live and
+  composable
 - 📋 **Copy buttons everywhere** — headers, body, full cURL
 - ↻ **Retry requests** from the inspector with your real Dio client
+- ⚡ **Real-time FPS monitor** — sparkline chart, dropped-frame list, startup
+  time, and API latency bar chart in one screen
+- 📳 **Shake to open** — shake the device to launch the inspector without
+  touching the overlay
 - 🔒 **Sanitization** for secrets / tokens / passwords before storage or upload
 - 🧭 **Breadcrumb trail** with bounded ring buffer
 - 💥 **Backend-agnostic crash reporter** — wire Crashlytics, Sentry, or your
@@ -56,7 +78,7 @@ PulseOps ships with two focused capabilities in v1.0:
 
 ```yaml
 dependencies:
-  pulse_ops: ^1.1.0
+  pulse_ops: ^1.2.0
   dio: ^5.4.0
 ```
 
@@ -112,9 +134,11 @@ The inspector UI provides:
 
 The list supports:
 
-- 🔎 Live search across URL / method / status
-- 🎯 Filter by method (`GET` / `POST` / `PUT` / `PATCH` / `DELETE`)
-- ⚠️ "Failed only" toggle
+- 🔎 Live search across URL, method, status, host, and error message
+- 🎯 Filter by HTTP method (`GET` / `POST` / `PUT` / `PATCH` / `DELETE`)
+- ⚠️ **Failed only** toggle — show only errored requests
+- 🐢 **Slow only** toggle — requests exceeding `slowRequestThresholdMs`
+- 🔢 **Status-family chips** — `2xx` / `3xx` / `4xx` / `5xx`
 
 ### Retrying a request
 
@@ -126,6 +150,50 @@ captured request via that client.
 
 `FormData` payloads are described (field names, file names, sizes) rather
 than serialized — useful for inspecting uploads without breaking streams.
+
+---
+
+## ⚡ Performance Monitoring
+
+The performance screen is available from the **speed icon** in the inspector
+toolbar. It requires no additional dependencies — everything uses Flutter's
+built-in `WidgetsBinding.addTimingsCallback`.
+
+### What's tracked
+
+| Metric | Description |
+| --- | --- |
+| **Startup time** | Wall-clock time from `PulseOps.initialize()` to the first rendered frame |
+| **Current FPS** | Rolling average over the last 15 frames |
+| **Dropped frames** | Frames taking > 16 ms (one refresh period at 60 Hz) |
+| **Severe jank** | Frames taking > 33 ms (two full refresh periods) |
+| **API latency** | Per-request bar chart for the last 40 completed calls |
+
+### FPS chart
+
+A gradient-filled sparkline shows FPS over the last N frames (default 300).
+The line turns green (≥ 55 fps), yellow (≥ 40 fps), or red (< 40 fps).
+Reference grid lines are drawn at 60 fps and 30 fps.
+
+### Latency chart
+
+Each bar represents one completed request, coloured:
+
+- 🟢 **Green** — within the slow-request threshold
+- 🟡 **Yellow** — exceeds `slowRequestThresholdMs`
+- 🔴 **Red** — the request failed
+
+A dashed threshold line marks the slow boundary.
+
+### Configuration
+
+```dart
+const PulseOpsConfig(
+  enableFpsMonitor: true,           // default: true
+  fpsFrameBufferSize: 300,          // frames kept in memory
+  slowRequestThresholdMs: 2000,     // ms before a request is "slow"
+)
+```
 
 ---
 
@@ -324,13 +392,28 @@ This timeline rides along to Crashlytics so triage starts with full context.
 
 ```dart
 const PulseOpsConfig(
-  enableInRelease: false,                  // disable overlay/inspector in prod
-  maxRecords: 200,                         // request ring-buffer size
-  maxBreadcrumbs: 50,                      // breadcrumb ring-buffer size
-  sanitizeKeys: ['authorization', ...],    // keys redacted everywhere
-  attachNetworkHistoryToCrashes: true,
-  showOverlay: true,                       // floating launcher
+  // — General —
+  enableInRelease: false,                  // keep disabled in prod builds
+  showOverlay: true,                       // floating launcher button
+
+  // — Network —
+  maxRecords: 200,                         // request ring-buffer capacity
+  sanitizeKeys: ['authorization', ...],    // keys redacted before storage
+  slowRequestThresholdMs: 2000,            // ms to flag a request as slow
   captureFailedRequestsAsCrashEvents: true,
+  attachNetworkHistoryToCrashes: true,
+
+  // — Performance —
+  enableFpsMonitor: true,                  // frame-timing subscriber
+  fpsFrameBufferSize: 300,                 // frames kept in memory
+
+  // — Overlay / UX —
+  enableShakeToOpen: true,                 // shake gesture to open inspector
+  shakeThreshold: 22.0,                    // m/s² to trigger a shake
+  inspectorPresentation: InspectorPresentation.bottomSheet, // or .fullScreen
+
+  // — Crash —
+  maxBreadcrumbs: 50,
 )
 ```
 
@@ -350,11 +433,16 @@ lib/
     │   ├── interceptor/                   # PulseDioInterceptor
     │   ├── models/                        # NetworkRecord
     │   ├── store/                         # NetworkStore (in-memory)
-    │   └── utils/                         # CurlBuilder, Sanitizer
+    │   └── utils/                         # CurlBuilder, Sanitizer, LogExporter
+    ├── performance/
+    │   ├── frame_metric.dart              # FrameMetric value type
+    │   ├── performance_store.dart         # ring-buffer + stream
+    │   └── fps_tracker.dart              # WidgetsBinding timing subscriber
     ├── crash/                             # breadcrumbs + reporter + bridge
     ├── ui/
     │   ├── inspector/                     # screens, tabs, widgets
-    │   ├── overlay/                       # draggable launcher
+    │   ├── performance/                   # PerformanceScreen + charts
+    │   ├── overlay/                       # draggable launcher + shake detector
     │   └── theme/                         # dark Material 3 theme
     └── providers/                         # Riverpod scope
 ```
@@ -384,11 +472,13 @@ flutter test
 
 ## 🛣 Roadmap
 
+- [x] Real-time FPS monitor, frame drop detection, API latency chart *(v1.2)*
+- [x] Shake-to-open, expandable bottom sheet, log export *(v1.1)*
 - [ ] Isar-backed persistent network store
 - [ ] HTTP/2 + `http` package interceptor adapter
 - [ ] Log inspector (debugPrint / `Logger`)
-- [ ] Performance traces (frame timings, GC)
 - [ ] Per-host throttling visualizer
+- [ ] Memory & GC pressure charts
 
 ---
 

@@ -37,6 +37,9 @@ class PulseOpsConfig {
     this.enableShakeToOpen = true,
     this.shakeThreshold = 22.0,
     this.inspectorPresentation = InspectorPresentation.bottomSheet,
+    this.enableFpsMonitor = true,
+    this.fpsFrameBufferSize = 300,
+    this.slowRequestThresholdMs = 2000,
   });
 
   /// Whether PulseOps should remain active in release builds.
@@ -85,6 +88,18 @@ class PulseOpsConfig {
   /// full-screen dialog behavior.
   final InspectorPresentation inspectorPresentation;
 
+  /// When `true`, the FPS tracker subscribes to [WidgetsBinding] frame
+  /// timings and feeds the [PerformanceStore].
+  final bool enableFpsMonitor;
+
+  /// Number of frame timing samples kept in memory. Older entries are evicted
+  /// once the buffer is full.
+  final int fpsFrameBufferSize;
+
+  /// Network requests whose round-trip duration exceeds this value (in
+  /// milliseconds) are flagged as slow in the inspector.
+  final int slowRequestThresholdMs;
+
   PulseOpsConfig copyWith({
     bool? enableInRelease,
     int? maxRecords,
@@ -96,6 +111,9 @@ class PulseOpsConfig {
     bool? enableShakeToOpen,
     double? shakeThreshold,
     InspectorPresentation? inspectorPresentation,
+    bool? enableFpsMonitor,
+    int? fpsFrameBufferSize,
+    int? slowRequestThresholdMs,
   }) {
     return PulseOpsConfig(
       enableInRelease: enableInRelease ?? this.enableInRelease,
@@ -111,6 +129,10 @@ class PulseOpsConfig {
       shakeThreshold: shakeThreshold ?? this.shakeThreshold,
       inspectorPresentation:
           inspectorPresentation ?? this.inspectorPresentation,
+      enableFpsMonitor: enableFpsMonitor ?? this.enableFpsMonitor,
+      fpsFrameBufferSize: fpsFrameBufferSize ?? this.fpsFrameBufferSize,
+      slowRequestThresholdMs:
+          slowRequestThresholdMs ?? this.slowRequestThresholdMs,
     );
   }
 }

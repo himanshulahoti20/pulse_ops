@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/pulse_ops_config.dart';
 import '../../crash/crash_diagnostics.dart';
 import '../../network/store/network_store.dart';
+import '../../performance/performance_store.dart';
 import '../../providers/providers.dart';
 import '../inspector/inspector_screen.dart';
 import '../theme/pulse_theme.dart';
@@ -17,6 +18,7 @@ Future<void> showPulseInspector(
   required PulseOpsConfig config,
   required NetworkStore store,
   required CrashDiagnostics crashDiagnostics,
+  required PerformanceStore performanceStore,
   Dio? retryDio,
 }) {
   final navigator = Navigator.of(context, rootNavigator: true);
@@ -24,6 +26,7 @@ Future<void> showPulseInspector(
     pulseOpsConfigProvider.overrideWithValue(config),
     networkStoreProvider.overrideWithValue(store),
     crashDiagnosticsProvider.overrideWithValue(crashDiagnostics),
+    performanceStoreProvider.overrideWithValue(performanceStore),
   ];
 
   if (config.inspectorPresentation == InspectorPresentation.fullScreen) {
@@ -112,6 +115,7 @@ class PulseOverlay extends StatefulWidget {
     required this.config,
     required this.store,
     required this.crashDiagnostics,
+    required this.performanceStore,
     this.retryDio,
   });
 
@@ -119,6 +123,7 @@ class PulseOverlay extends StatefulWidget {
   final PulseOpsConfig config;
   final NetworkStore store;
   final CrashDiagnostics crashDiagnostics;
+  final PerformanceStore performanceStore;
   final Dio? retryDio;
 
   @override
@@ -178,6 +183,7 @@ class _PulseOverlayState extends State<PulseOverlay> {
         config: widget.config,
         store: widget.store,
         crashDiagnostics: widget.crashDiagnostics,
+        performanceStore: widget.performanceStore,
         retryDio: widget.retryDio,
       );
     } finally {
