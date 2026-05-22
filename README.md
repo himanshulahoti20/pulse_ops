@@ -7,7 +7,6 @@
 
 <!-- GitHub -->
 ![CI](https://github.com/himanshulahoti20/pulse_ops/actions/workflows/dart_ci.yml/badge.svg?branch=main&cache_bust=1)
-[![Sponsor](https://img.shields.io/github/sponsors/himanshulahoti20?label=Sponsor&logo=GitHub)](https://github.com/sponsors/himanshulahoti20)
 
 <!-- tech -->
 [![Flutter ≥3.10](https://img.shields.io/badge/flutter-%E2%89%A53.10-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
