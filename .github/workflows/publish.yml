@@ -1,5 +1,8 @@
 name: Publish to pub.dev
 
+# Triggered on:
+#   1. push to main  → tag job creates a version tag if pubspec.yaml bumped
+#   2. tag push      → publish job runs (dart_ci.yml already tested this commit)
 on:
   push:
     branches: [main]
@@ -7,6 +10,7 @@ on:
 
 jobs:
   # ── Auto-tag when version is bumped on main ──────────────────────────────
+  # No Flutter or Dart needed — just bash + git.
   tag:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
@@ -30,26 +34,11 @@ jobs:
           git tag -a "v$NEW" -m "Release v$NEW"
           git push origin "v$NEW"
 
-  # ── Run tests on every version tag ──────────────────────────────────────
-  test:
-    if: startsWith(github.ref, 'refs/tags/v')
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-
-      - run: flutter pub get
-      - run: flutter analyze --no-fatal-infos
-      - run: flutter test
-
   # ── Publish via the official dart-lang reusable workflow ─────────────────
-  # This is the only reliable way to get OIDC working with pub.dev.
-  # dart pub publish --force alone does not correctly exchange the token.
+  # dart_ci.yml already ran analyze + test on the commit that created this tag,
+  # so there is nothing to repeat here.
+  # The reusable workflow installs standalone Dart only (~20 s) — no Flutter.
   publish:
-    needs: test
     if: startsWith(github.ref, 'refs/tags/v')
     permissions:
       id-token: write
