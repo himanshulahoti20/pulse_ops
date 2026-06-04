@@ -2,6 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/pulse_ops_config.dart';
 import '../crash/crash_diagnostics.dart';
+import '../memory/memory_snapshot.dart';
+import '../memory/memory_store.dart';
+import '../memory/tracked_object.dart';
 import '../network/models/network_record.dart';
 import '../network/store/network_store.dart';
 import '../performance/frame_metric.dart';
@@ -39,6 +42,30 @@ final frameMetricsProvider = StreamProvider<List<FrameMetric>>((ref) {
   final store = ref.watch(performanceStoreProvider);
   return store.stream.asBroadcastStream();
 });
+
+// ── Memory ─────────────────────────────────────────────────────────────────
+
+final memoryStoreProvider = Provider<MemoryStore>((ref) {
+  throw UnimplementedError('MemoryStore must be provided via overrides');
+});
+
+/// Reactive list of RSS snapshots from [MemoryStore].
+final memorySnapshotsProvider = StreamProvider<List<MemorySnapshot>>((ref) {
+  final store = ref.watch(memoryStoreProvider);
+  return store.stream.asBroadcastStream();
+}).select((async) => async.maybeWhen(
+      data: (s) => s,
+      orElse: () => const <MemorySnapshot>[],
+    ));
+
+/// Reactive list of objects that have not been disposed within the leak threshold.
+final potentialLeaksProvider = StreamProvider<List<TrackedObject>>((ref) {
+  final store = ref.watch(memoryStoreProvider);
+  return store.objectStream.asBroadcastStream();
+}).select((async) => async.maybeWhen(
+      data: (objects) => objects.where((o) => o.isPotentialLeak).toList(),
+      orElse: () => const <TrackedObject>[],
+    ));
 
 // ── Inspector filter ───────────────────────────────────────────────────────
 

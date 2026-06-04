@@ -4,21 +4,28 @@
 [![pub version](https://img.shields.io/pub/v/pulse_ops.svg)](https://pub.dev/packages/pulse_ops)
 [![pub points](https://img.shields.io/pub/points/pulse_ops)](https://pub.dev/packages/pulse_ops/score)
 [![pub likes](https://img.shields.io/pub/likes/pulse_ops)](https://pub.dev/packages/pulse_ops/score)
+[![pub popularity](https://img.shields.io/pub/popularity/pulse_ops)](https://pub.dev/packages/pulse_ops/score)
 
 <!-- GitHub -->
 ![CI](https://github.com/himanshulahoti20/pulse_ops/actions/workflows/dart_ci.yml/badge.svg?branch=main&cache_bust=1)
+[![GitHub stars](https://img.shields.io/github/stars/himanshulahoti20/pulse_ops?style=flat&logo=github&label=stars)](https://github.com/himanshulahoti20/pulse_ops/stargazers)
+[![GitHub issues](https://img.shields.io/github/issues/himanshulahoti20/pulse_ops)](https://github.com/himanshulahoti20/pulse_ops/issues)
+[![GitHub last commit](https://img.shields.io/github/last-commit/himanshulahoti20/pulse_ops)](https://github.com/himanshulahoti20/pulse_ops/commits/main)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/himanshulahoti20/pulse_ops/pulls)
+[![Sponsor](https://img.shields.io/github/sponsors/himanshulahoti20?label=Sponsor&logo=GitHub)](https://github.com/sponsors/himanshulahoti20)
 
 <!-- tech -->
 [![Flutter ≥3.10](https://img.shields.io/badge/flutter-%E2%89%A53.10-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
 [![Dart ≥3.0](https://img.shields.io/badge/dart-%E2%89%A53.0-0175C2?logo=dart&logoColor=white)](https://dart.dev)
-[![platforms](https://img.shields.io/badge/platform-android%20%7C%20ios%20%7C%20macos%20%7C%20web%20%7C%20linux%20%7C%20windows-lightgrey)](https://pub.dev/packages/pulse_ops)
+[![iOS](https://img.shields.io/badge/iOS-000000?style=flat&logo=apple&logoColor=white)](https://pub.dev/packages/pulse_ops)
+[![Android](https://img.shields.io/badge/Android-3DDC84?style=flat&logo=android&logoColor=white)](https://pub.dev/packages/pulse_ops)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
+---
 
 > A modern, Flutter-native developer toolkit for **in-app network inspection**,
-> **performance monitoring**, and **crash diagnostics** — designed as a
-> lightweight alternative to Chucker / Pulse / Stetho, with a beautiful dark
-> Material 3 UI.
+> **performance & memory monitoring**, and **crash diagnostics** — built for
+> iOS & Android, with a beautiful dark Material 3 UI.
 
 <p align="center">
   <img
@@ -28,15 +35,17 @@
   />
 </p>
 
-PulseOps ships with three focused capabilities:
+PulseOps ships with four focused capabilities:
 
 1. **🌐 Network Inspector** — a Dio interceptor that records every request,
    pretty-prints JSON, exports cURL, retries calls, and presents it all in a
    developer-grade dark inspector.
 2. **⚡ Performance Monitoring** — real-time FPS tracking, frame drop & jank
-   detection, startup time measurement, and API latency charts — all with zero
-   extra dependencies.
-3. **💥 Crash Diagnostics** — pluggable bridge to Firebase Crashlytics (or any
+   detection, startup time measurement, and API latency charts.
+3. **🧠 Memory Monitoring** — RSS memory tracking, spike detection, leak
+   detection via `FlutterMemoryAllocations`, widget lifecycle logs, and rebuild
+   frequency tracking.
+4. **💥 Crash Diagnostics** — pluggable bridge to Firebase Crashlytics (or any
    backend) with rich breadcrumbs and automatic attachment of recent API
    activity to every crash report.
 
@@ -53,9 +62,14 @@ PulseOps ships with three focused capabilities:
 - 📋 **Copy buttons everywhere** — headers, body, full cURL
 - ↻ **Retry requests** from the inspector with your real Dio client
 - ⚡ **Real-time FPS monitor** — sparkline chart, dropped-frame list, startup
-  time, and API latency bar chart in one screen
-- 📳 **Shake to open** — shake the device to launch the inspector without
-  touching the overlay
+  time, and API latency bar chart
+- 🧠 **Memory monitor** — RSS sparkline, spike warnings, leak list, widget
+  lifecycle breakdown, and rebuild frequency — all live
+- 💾 **Persistent network store** — `FileBackedNetworkStore` survives app
+  restarts with zero extra setup
+- 📡 **Unified event exporter** — one interface to forward every failed request
+  and every crash to your own analytics backend
+- 📳 **Shake to open** — shake the device to launch the inspector
 - 🔒 **Sanitization** for secrets / tokens / passwords before storage or upload
 - 🧭 **Breadcrumb trail** with bounded ring buffer
 - 💥 **Backend-agnostic crash reporter** — wire Crashlytics, Sentry, or your
@@ -72,7 +86,7 @@ PulseOps ships with three focused capabilities:
 
 ```yaml
 dependencies:
-  pulse_ops: ^1.2.0
+  pulse_ops: ^1.3.0
   dio: ^5.4.0
 ```
 
@@ -99,7 +113,8 @@ Future<void> main() async {
 ```
 
 That's it. A draggable floating button appears in debug builds; tap it to
-open the inspector.
+open the inspector. Use the **🧠** toolbar button for memory, **⚡** for
+performance.
 
 ### 3. (Optional) Open the inspector imperatively
 
@@ -134,6 +149,19 @@ The list supports:
 - 🐢 **Slow only** toggle — requests exceeding `slowRequestThresholdMs`
 - 🔢 **Status-family chips** — `2xx` / `3xx` / `4xx` / `5xx`
 
+### Persistent store
+
+To keep network history across app restarts, swap in `FileBackedNetworkStore`:
+
+```dart
+final store = FileBackedNetworkStore(maxRecords: 200);
+await store.initialize();              // loads previous session from disk
+
+await PulseOps.initialize(
+  networkStore: store,
+);
+```
+
 ### Retrying a request
 
 Pass your authenticated `Dio` instance to `wrap(retryDio:)` or
@@ -149,7 +177,7 @@ than serialized — useful for inspecting uploads without breaking streams.
 
 ## ⚡ Performance Monitoring
 
-The performance screen is available from the **speed icon** in the inspector
+The performance screen is available from the **⚡ icon** in the inspector
 toolbar. It requires no additional dependencies — everything uses Flutter's
 built-in `WidgetsBinding.addTimingsCallback`.
 
@@ -179,15 +207,95 @@ Each bar represents one completed request, coloured:
 
 A dashed threshold line marks the slow boundary.
 
-### Configuration
+---
+
+## 🧠 Memory Monitoring
+
+The memory screen is available from the **🧠 icon** in the inspector toolbar.
+It uses `dart:io`'s `ProcessInfo.currentRss` for RSS sampling and Flutter's
+`FlutterMemoryAllocations` for object lifecycle — **no extra dependencies**.
+
+### Metrics
+
+| Metric | Description |
+| --- | --- |
+| **Current RSS** | Process resident set size, sampled every 2 s (configurable) |
+| **Peak RSS** | Highest RSS reading since monitoring started |
+| **Memory spikes** | Samples >20% above the 10-sample rolling average |
+| **Potential leaks** | Objects created but not disposed after 30 s |
+| **Widget lifecycle** | Created / active / disposed counts per type |
+| **Rebuild counts** | How many times each widget type has been rebuilt |
+
+### Leak detection
+
+PulseOps subscribes to `FlutterMemoryAllocations` and tracks the lifecycle
+of every `ChangeNotifier`, `AnimationController`, `TextEditingController`, and
+other disposable Flutter objects. Any object that remains alive for > 30 s
+without being disposed appears in the **Potential Leaks** list with its age.
+
+### Rebuild tracking
+
+Call `PulseOps.instance.memoryStore.recordRebuild(widgetType)` at the top of
+your `build()` method to track rebuild frequency:
 
 ```dart
-const PulseOpsConfig(
-  enableFpsMonitor: true,           // default: true
-  fpsFrameBufferSize: 300,          // frames kept in memory
-  slowRequestThresholdMs: 2000,     // ms before a request is "slow"
-)
+@override
+Widget build(BuildContext context) {
+  PulseOps.instance.memoryStore.recordRebuild('MyHeavyWidget');
+  return ...;
+}
 ```
+
+Counts appear colour-coded in the Memory screen — red (> 50), yellow (> 20).
+
+---
+
+## 📡 Unified Event Exporter
+
+Implement `PulseEventExporter` and pass it to `PulseOps.initialize` to receive
+**every failed API call and every crash** in one place, so you can forward them
+to Mixpanel, Amplitude, your own backend, or any analytics sink:
+
+```dart
+class MyAnalyticsExporter implements PulseEventExporter {
+  @override
+  Future<void> onFailedRequest(NetworkRecord record) async {
+    await MyAnalytics.track('api_error', {
+      'url': record.url,
+      'method': record.method,
+      'status': record.statusCode,
+      'error': record.error,
+      'duration_ms': record.duration.inMilliseconds,
+    });
+  }
+
+  @override
+  Future<void> onCrash(
+    Object error,
+    StackTrace? stackTrace, {
+    required String? reason,
+    required bool fatal,
+    required List<Breadcrumb> breadcrumbs,
+    required List<NetworkRecord> recentRequests,
+  }) async {
+    await MyAnalytics.trackCrash(
+      error.toString(),
+      fatal: fatal,
+      context: {'breadcrumb_count': breadcrumbs.length},
+    );
+  }
+}
+```
+
+```dart
+await PulseOps.initialize(
+  eventExporter: MyAnalyticsExporter(),
+);
+```
+
+This is separate from `PulseCrashReporter` — the exporter fires for both
+crashes **and** failed requests, making it ideal for a unified observability
+pipeline.
 
 ---
 
@@ -366,20 +474,6 @@ try {
 }
 ```
 
-### Failed requests
-
-When `PulseOpsConfig.captureFailedRequestsAsCrashEvents` is `true` (the
-default), every Dio exception is forwarded to the configured reporter as a
-non-fatal — already enriched with the request summary, e.g.:
-
-```text
-GET /profile        200 OK
-POST /login         timeout
-PUT /settings       500
-```
-
-This timeline rides along to Crashlytics so triage starts with full context.
-
 ---
 
 ## ⚙️ Configuration
@@ -400,6 +494,11 @@ const PulseOpsConfig(
   // — Performance —
   enableFpsMonitor: true,                  // frame-timing subscriber
   fpsFrameBufferSize: 300,                 // frames kept in memory
+
+  // — Memory —
+  enableMemoryMonitor: true,               // RSS polling + FlutterMemoryAllocations
+  memorySampleIntervalSeconds: 2,          // polling interval
+  memorySnapshotBufferSize: 120,           // snapshots kept (~4 min at 2 s)
 
   // — Overlay / UX —
   enableShakeToOpen: true,                 // shake gesture to open inspector
@@ -422,20 +521,26 @@ shorthand named args `enableInRelease`, `sanitizeKeys`, `crashlytics`.
 lib/
 ├── pulse_ops.dart                         # public exports
 └── src/
-    ├── core/                              # facade + config
+    ├── core/                              # facade + config + PulseEventExporter
     ├── network/
     │   ├── interceptor/                   # PulseDioInterceptor
-    │   ├── models/                        # NetworkRecord
-    │   ├── store/                         # NetworkStore (in-memory)
+    │   ├── models/                        # NetworkRecord (with toJson/fromJson)
+    │   ├── store/                         # InMemoryNetworkStore, FileBackedNetworkStore
     │   └── utils/                         # CurlBuilder, Sanitizer, LogExporter
     ├── performance/
     │   ├── frame_metric.dart              # FrameMetric value type
     │   ├── performance_store.dart         # ring-buffer + stream
     │   └── fps_tracker.dart              # WidgetsBinding timing subscriber
+    ├── memory/
+    │   ├── memory_snapshot.dart           # RSS snapshot value type
+    │   ├── tracked_object.dart            # object lifecycle record
+    │   ├── memory_store.dart             # ring-buffer + leak map + rebuild counts
+    │   └── memory_monitor.dart           # RSS polling + FlutterMemoryAllocations
     ├── crash/                             # breadcrumbs + reporter + bridge
     ├── ui/
     │   ├── inspector/                     # screens, tabs, widgets
     │   ├── performance/                   # PerformanceScreen + charts
+    │   ├── memory/                        # MemoryScreen + RSS chart
     │   ├── overlay/                       # draggable launcher + shake detector
     │   └── theme/                         # dark Material 3 theme
     └── providers/                         # Riverpod scope
@@ -443,11 +548,12 @@ lib/
 
 The design follows **clean architecture** principles: the network layer is
 plain Dart with no Flutter imports, the UI consumes data only through
-Riverpod providers, and the crash backend is injected via an interface.
+Riverpod providers, and crash/export backends are injected via interfaces.
 This makes it trivial to:
 
-- swap the in-memory store for an Isar/Hive-backed store
-- substitute the crash reporter for Sentry, Bugsnag, or a custom sink
+- swap the in-memory store for `FileBackedNetworkStore` or any custom sink
+- substitute the crash reporter for Sentry, Bugsnag, or a custom logger
+- forward every event to your own backend via `PulseEventExporter`
 - embed the inspector inside a debug menu without using the overlay
 
 ---
@@ -466,13 +572,14 @@ flutter test
 
 ## 🛣 Roadmap
 
+- [x] Memory monitoring — RSS, leaks, lifecycle, rebuild tracking *(v1.3)*
+- [x] Persistent network store + unified event exporter *(v1.3)*
 - [x] Real-time FPS monitor, frame drop detection, API latency chart *(v1.2)*
 - [x] Shake-to-open, expandable bottom sheet, log export *(v1.1)*
-- [ ] Isar-backed persistent network store
 - [ ] HTTP/2 + `http` package interceptor adapter
 - [ ] Log inspector (debugPrint / `Logger`)
 - [ ] Per-host throttling visualizer
-- [ ] Memory & GC pressure charts
+- [ ] GC pressure & heap breakdown charts
 
 ---
 

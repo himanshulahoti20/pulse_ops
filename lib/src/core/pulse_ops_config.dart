@@ -40,6 +40,9 @@ class PulseOpsConfig {
     this.enableFpsMonitor = true,
     this.fpsFrameBufferSize = 300,
     this.slowRequestThresholdMs = 2000,
+    this.enableMemoryMonitor = true,
+    this.memorySampleIntervalSeconds = 2,
+    this.memorySnapshotBufferSize = 120,
   });
 
   /// Whether PulseOps should remain active in release builds.
@@ -100,6 +103,16 @@ class PulseOpsConfig {
   /// milliseconds) are flagged as slow in the inspector.
   final int slowRequestThresholdMs;
 
+  /// When `true`, [MemoryMonitor] polls RSS memory and tracks object
+  /// lifecycle events via [FlutterMemoryAllocations].
+  final bool enableMemoryMonitor;
+
+  /// How often (in seconds) [MemoryMonitor] samples the process RSS.
+  final int memorySampleIntervalSeconds;
+
+  /// Number of [MemorySnapshot] entries kept in the ring buffer.
+  final int memorySnapshotBufferSize;
+
   PulseOpsConfig copyWith({
     bool? enableInRelease,
     int? maxRecords,
@@ -114,6 +127,9 @@ class PulseOpsConfig {
     bool? enableFpsMonitor,
     int? fpsFrameBufferSize,
     int? slowRequestThresholdMs,
+    bool? enableMemoryMonitor,
+    int? memorySampleIntervalSeconds,
+    int? memorySnapshotBufferSize,
   }) {
     return PulseOpsConfig(
       enableInRelease: enableInRelease ?? this.enableInRelease,
@@ -133,6 +149,11 @@ class PulseOpsConfig {
       fpsFrameBufferSize: fpsFrameBufferSize ?? this.fpsFrameBufferSize,
       slowRequestThresholdMs:
           slowRequestThresholdMs ?? this.slowRequestThresholdMs,
+      enableMemoryMonitor: enableMemoryMonitor ?? this.enableMemoryMonitor,
+      memorySampleIntervalSeconds:
+          memorySampleIntervalSeconds ?? this.memorySampleIntervalSeconds,
+      memorySnapshotBufferSize:
+          memorySnapshotBufferSize ?? this.memorySnapshotBufferSize,
     );
   }
 }
