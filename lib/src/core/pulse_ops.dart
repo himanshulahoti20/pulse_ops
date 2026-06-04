@@ -6,12 +6,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../crash/breadcrumb.dart';
 import '../crash/crash_diagnostics.dart';
 import '../crash/crash_reporter.dart';
+import '../memory/memory_monitor.dart';
+import '../memory/memory_store.dart';
 import '../network/interceptor/pulse_dio_interceptor.dart';
 import '../network/store/network_store.dart';
 import '../performance/fps_tracker.dart';
 import '../performance/performance_store.dart';
 import '../providers/providers.dart';
 import '../ui/overlay/pulse_overlay.dart';
+import 'pulse_event_exporter.dart';
 import 'pulse_ops_config.dart';
 
 /// Entry point for the PulseOps SDK.
@@ -31,11 +34,12 @@ class PulseOps {
     required this.dioInterceptor,
     required this.enabled,
     required this.performanceStore,
+    required this.memoryStore,
+    this.eventExporter,
   });
 
   static PulseOps? _instance;
 
-  /// Returns the singleton. Throws if [initialize] has not been called.
   static PulseOps get instance {
     final i = _instance;
     if (i == null) {
@@ -46,7 +50,6 @@ class PulseOps {
     return i;
   }
 
-  /// Whether PulseOps has been initialized (useful for guarded retries).
   static bool get isInitialized => _instance != null;
 
   final PulseOpsConfig config;
@@ -55,10 +58,13 @@ class PulseOps {
   final BreadcrumbTrail breadcrumbs;
   final PulseDioInterceptor dioInterceptor;
   final PerformanceStore performanceStore;
+  final MemoryStore memoryStore;
+
+  /// Optional sink that receives every failed request and every crash so the
+  /// host app can forward them to its own analytics backend.
+  final PulseEventExporter? eventExporter;
 
   /// `false` when running in release mode without [PulseOpsConfig.enableInRelease].
-  /// In that state PulseOps becomes a no-op shell so production builds pay
-  /// (almost) nothing.
   final bool enabled;
 
   /// Initialize the SDK. Safe to call exactly once. Subsequent calls return
@@ -66,9 +72,17 @@ class PulseOps {
   ///
   /// Pass [crashReporter] to wire up Firebase Crashlytics, Sentry, or any
   /// other backend. When omitted, errors are routed to `debugPrint`.
+  ///
+  /// Pass [networkStore] to use a custom [NetworkStore] implementation such as
+  /// [FileBackedNetworkStore] for persistence across app restarts.
+  ///
+  /// Pass [eventExporter] to receive every failed request and crash in a
+  /// single unified callback so you can forward them to your own backend.
   static Future<PulseOps> initialize({
     PulseOpsConfig config = const PulseOpsConfig(),
     PulseCrashReporter? crashReporter,
+    NetworkStore? networkStore,
+    PulseEventExporter? eventExporter,
     bool installGlobalErrorHandlers = true,
     bool? crashlytics,
     bool? enableInRelease,
@@ -87,7 +101,8 @@ class PulseOps {
 
     final enabled = kDebugMode || effectiveConfig.enableInRelease;
 
-    final store = InMemoryNetworkStore(maxRecords: effectiveConfig.maxRecords);
+    final store = networkStore ??
+        InMemoryNetworkStore(maxRecords: effectiveConfig.maxRecords);
     final breadcrumbs =
         BreadcrumbTrail(maxEntries: effectiveConfig.maxBreadcrumbs);
     final reporter = crashReporter ?? const NoopCrashReporter();
@@ -96,24 +111,34 @@ class PulseOps {
       breadcrumbs: breadcrumbs,
       networkStore: store,
       config: effectiveConfig,
+      eventExporter: eventExporter,
     );
     final interceptor = PulseDioInterceptor(
       store: store,
       config: effectiveConfig,
       crashReporter: reporter,
       breadcrumbs: breadcrumbs,
+      eventExporter: eventExporter,
     );
 
     final perfStore =
         PerformanceStore(maxFrames: effectiveConfig.fpsFrameBufferSize);
     perfStore.markInit();
 
+    final memStore =
+        MemoryStore(maxSnapshots: effectiveConfig.memorySnapshotBufferSize);
+
     if (installGlobalErrorHandlers && enabled) {
       diagnostics.installGlobalErrorHandlers();
     }
-
     if (enabled && effectiveConfig.enableFpsMonitor) {
       FpsTracker(perfStore).start();
+    }
+    if (enabled && effectiveConfig.enableMemoryMonitor) {
+      MemoryMonitor(
+        memStore,
+        sampleIntervalSeconds: effectiveConfig.memorySampleIntervalSeconds,
+      ).start();
     }
 
     _instance = PulseOps._(
@@ -124,6 +149,8 @@ class PulseOps {
       dioInterceptor: interceptor,
       enabled: enabled,
       performanceStore: perfStore,
+      memoryStore: memStore,
+      eventExporter: eventExporter,
     );
 
     return _instance!;
@@ -131,9 +158,6 @@ class PulseOps {
 
   /// Wraps a widget tree to host the floating overlay launcher and the
   /// Riverpod scope used by the inspector.
-  ///
-  /// Pass [retryDio] to enable one-tap retry from the inspector — typically
-  /// your app's authenticated Dio instance.
   Widget wrap({required Widget child, Dio? retryDio}) {
     if (!enabled) return child;
     return ProviderScope(
@@ -142,20 +166,21 @@ class PulseOps {
         networkStoreProvider.overrideWithValue(store),
         crashDiagnosticsProvider.overrideWithValue(crashDiagnostics),
         performanceStoreProvider.overrideWithValue(performanceStore),
+        memoryStoreProvider.overrideWithValue(memoryStore),
       ],
       child: PulseOverlay(
         config: config,
         store: store,
         crashDiagnostics: crashDiagnostics,
         performanceStore: performanceStore,
+        memoryStore: memoryStore,
         retryDio: retryDio,
         child: child,
       ),
     );
   }
 
-  /// Imperatively push the inspector. Useful when the overlay is disabled or
-  /// you want to surface the inspector from a debug menu.
+  /// Imperatively push the inspector.
   Future<void> openInspector(BuildContext context, {Dio? retryDio}) {
     return showPulseInspector(
       context,
@@ -163,11 +188,11 @@ class PulseOps {
       store: store,
       crashDiagnostics: crashDiagnostics,
       performanceStore: performanceStore,
+      memoryStore: memoryStore,
       retryDio: retryDio,
     );
   }
 
-  /// Convenience pass-through: add a breadcrumb.
   void log(
     String message, {
     Map<String, dynamic>? data,
@@ -175,7 +200,6 @@ class PulseOps {
   }) =>
       crashDiagnostics.log(message, data: data, level: level);
 
-  /// Convenience pass-through: report an error.
   Future<void> recordError(
     Object error,
     StackTrace? stackTrace, {
@@ -191,11 +215,11 @@ class PulseOps {
         extra: extra,
       );
 
-  /// Test-only reset.
   @visibleForTesting
   static Future<void> reset() async {
     _instance?.store.dispose();
     _instance?.performanceStore.dispose();
+    _instance?.memoryStore.dispose();
     _instance = null;
   }
 }

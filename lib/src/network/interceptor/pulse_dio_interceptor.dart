@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 
 import '../../crash/breadcrumb.dart';
 import '../../crash/crash_reporter.dart';
+import '../../core/pulse_event_exporter.dart';
 import '../../core/pulse_ops_config.dart';
 import '../models/network_record.dart';
 import '../store/network_store.dart';
@@ -21,17 +22,20 @@ class PulseDioInterceptor extends Interceptor {
     required PulseCrashReporter crashReporter,
     required BreadcrumbTrail breadcrumbs,
     Sanitizer? sanitizer,
+    PulseEventExporter? eventExporter,
   })  : _store = store,
         _config = config,
         _crashReporter = crashReporter,
         _breadcrumbs = breadcrumbs,
-        _sanitizer = sanitizer ?? Sanitizer(config.sanitizeKeys);
+        _sanitizer = sanitizer ?? Sanitizer(config.sanitizeKeys),
+        _eventExporter = eventExporter;
 
   final NetworkStore _store;
   final PulseOpsConfig _config;
   final PulseCrashReporter _crashReporter;
   final BreadcrumbTrail _breadcrumbs;
   final Sanitizer _sanitizer;
+  final PulseEventExporter? _eventExporter;
 
   int _counter = 0;
 
@@ -106,15 +110,16 @@ class PulseDioInterceptor extends Interceptor {
       status: isCancel ? NetworkStatus.cancelled : NetworkStatus.error,
     );
 
-    if (!isCancel &&
-        updated != null &&
-        _config.captureFailedRequestsAsCrashEvents) {
-      _crashReporter.recordNonFatal(
-        err,
-        stackTrace: err.stackTrace,
-        reason: 'PulseOps: HTTP ${updated.method} ${updated.endpoint} failed',
-        context: updated.toSummaryMap(),
-      );
+    if (!isCancel && updated != null) {
+      if (_config.captureFailedRequestsAsCrashEvents) {
+        _crashReporter.recordNonFatal(
+          err,
+          stackTrace: err.stackTrace,
+          reason: 'PulseOps: HTTP ${updated.method} ${updated.endpoint} failed',
+          context: updated.toSummaryMap(),
+        );
+      }
+      _eventExporter?.onFailedRequest(updated);
     }
 
     handler.next(err);

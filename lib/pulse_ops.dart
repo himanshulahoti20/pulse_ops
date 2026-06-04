@@ -21,6 +21,11 @@ export 'src/network/store/network_store.dart'
 export 'src/network/utils/curl_builder.dart' show CurlBuilder;
 export 'src/network/utils/log_exporter.dart'
     show NetworkLogExporter, LogExportFormat;
+export 'src/network/store/file_network_store.dart' show FileBackedNetworkStore;
 export 'src/network/utils/sanitizer.dart' show Sanitizer;
 export 'src/performance/frame_metric.dart' show FrameMetric;
 export 'src/performance/performance_store.dart' show PerformanceStore;
+export 'src/memory/memory_snapshot.dart' show MemorySnapshot;
+export 'src/memory/memory_store.dart' show MemoryStore;
+export 'src/memory/tracked_object.dart' show TrackedObject;
+export 'src/core/pulse_event_exporter.dart' show PulseEventExporter;

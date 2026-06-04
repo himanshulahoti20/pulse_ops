@@ -4,6 +4,39 @@ All notable changes to **PulseOps** will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/) and
 this project adheres to [Semantic Versioning](https://semver.org/).
 
+## 1.3.0 — 2026-06-04
+
+### 🧠 Memory Monitoring
+
+- **RSS memory tracking** — polls `ProcessInfo.currentRss` every 2 s (configurable)
+  and stores up to 120 snapshots in a ring buffer.
+- **Memory spike warnings** — samples >20% above the rolling average are flagged
+  and highlighted in the RSS sparkline chart.
+- **Leak detection** — subscribes to `FlutterMemoryAllocations` to track
+  `ChangeNotifier`, `AnimationController`, `TextEditingController`, and other
+  disposable Flutter objects. Objects not disposed within 30 s are listed as
+  potential leaks with their age.
+- **Widget lifecycle log** — live created/disposed/active counts and a
+  type-breakdown of the top active objects.
+- **Rebuild tracker** — call `store.recordRebuild(widgetType)` (or use the
+  provided `PulseRebuildTracker` mixin) to track how often each widget rebuilds.
+  Counts appear colour-coded in the Memory screen (red >50, yellow >20).
+- **Memory screen** accessible from the inspector toolbar (`🧠` button), showing
+  the RSS chart, spike warnings, leak list, lifecycle summary, and rebuild counts.
+
+### 💾 Persistent Network Store
+
+- **`FileBackedNetworkStore`** — a drop-in `NetworkStore` replacement that
+  persists captured records to a JSON file in the app's documents directory.
+  Records survive app restarts. Pass it to `PulseOps.initialize(networkStore:)`.
+
+### 📡 Unified Event Exporter
+
+- **`PulseEventExporter`** — new interface with two callbacks:
+  `onFailedRequest(NetworkRecord)` and `onCrash(error, stack, ...)`.
+  Implement it and pass it to `PulseOps.initialize(eventExporter:)` to forward
+  every failed API call and every crash to your own backend in one place.
+
 ## 1.2.0 — 2026-05-22
 
 ### ⚡ Performance Monitoring

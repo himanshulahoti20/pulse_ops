@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../core/pulse_event_exporter.dart';
 import '../core/pulse_ops_config.dart';
 import '../network/store/network_store.dart';
 import 'breadcrumb.dart';
@@ -15,15 +16,18 @@ class CrashDiagnostics {
     required BreadcrumbTrail breadcrumbs,
     required NetworkStore networkStore,
     required PulseOpsConfig config,
+    PulseEventExporter? eventExporter,
   })  : _reporter = reporter,
         _breadcrumbs = breadcrumbs,
         _store = networkStore,
-        _config = config;
+        _config = config,
+        _eventExporter = eventExporter;
 
   final PulseCrashReporter _reporter;
   final BreadcrumbTrail _breadcrumbs;
   final NetworkStore _store;
   final PulseOpsConfig _config;
+  final PulseEventExporter? _eventExporter;
 
   BreadcrumbTrail get breadcrumbs => _breadcrumbs;
   PulseCrashReporter get reporter => _reporter;
@@ -74,6 +78,14 @@ class CrashDiagnostics {
           context: context,
         );
       }
+      await _eventExporter?.onCrash(
+        error,
+        stackTrace,
+        reason: reason,
+        fatal: fatal,
+        breadcrumbs: _breadcrumbs.entries,
+        recentRequests: _store.records.take(20).toList(),
+      );
     } catch (e, st) {
       debugPrint('PulseOps: failed to report error: $e\n$st');
     }

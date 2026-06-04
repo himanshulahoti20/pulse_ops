@@ -126,6 +126,60 @@ class NetworkRecord {
     );
   }
 
+  factory NetworkRecord.fromJson(Map<String, dynamic> j) => NetworkRecord(
+        id: j['id'] as String,
+        method: j['method'] as String,
+        url: j['url'] as String,
+        startedAt: DateTime.parse(j['startedAt'] as String),
+        endedAt: j['endedAt'] != null
+            ? DateTime.parse(j['endedAt'] as String)
+            : null,
+        statusCode: j['statusCode'] as int?,
+        statusMessage: j['statusMessage'] as String?,
+        requestHeaders:
+            (j['requestHeaders'] as Map?)?.cast<String, dynamic>() ?? {},
+        responseHeaders:
+            (j['responseHeaders'] as Map?)?.cast<String, dynamic>() ?? {},
+        requestBody: j['requestBody'],
+        responseBody: j['responseBody'],
+        queryParameters:
+            (j['queryParameters'] as Map?)?.cast<String, dynamic>() ?? {},
+        error: j['error'] as String?,
+        status: NetworkStatus.values.firstWhere(
+          (s) => s.name == j['status'],
+          orElse: () => NetworkStatus.pending,
+        ),
+        isMultipart: j['isMultipart'] as bool? ?? false,
+        requestSizeBytes: j['requestSizeBytes'] as int?,
+        responseSizeBytes: j['responseSizeBytes'] as int?,
+      );
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+        'id': id,
+        'method': method,
+        'url': url,
+        'startedAt': startedAt.toIso8601String(),
+        'endedAt': endedAt?.toIso8601String(),
+        'statusCode': statusCode,
+        'statusMessage': statusMessage,
+        'requestHeaders': requestHeaders,
+        'responseHeaders': responseHeaders,
+        'requestBody': _jsonSafe(requestBody),
+        'responseBody': _jsonSafe(responseBody),
+        'queryParameters': queryParameters,
+        'error': error,
+        'status': status.name,
+        'isMultipart': isMultipart,
+        'requestSizeBytes': requestSizeBytes,
+        'responseSizeBytes': responseSizeBytes,
+      };
+
+  static Object? _jsonSafe(Object? v) {
+    if (v == null || v is String || v is num || v is bool) return v;
+    if (v is Map || v is List) return v;
+    return v.toString();
+  }
+
   Map<String, dynamic> toSummaryMap() => <String, dynamic>{
         'id': id,
         'method': method,

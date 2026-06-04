@@ -7,6 +7,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../network/models/network_record.dart';
 import '../../network/utils/log_exporter.dart';
 import '../../providers/providers.dart';
+import '../memory/memory_screen.dart';
 import '../performance/performance_screen.dart';
 import '../theme/pulse_theme.dart';
 import 'request_details_screen.dart';
@@ -56,6 +57,18 @@ class _InspectorScreenState extends ConsumerState<InspectorScreen> {
       appBar: AppBar(
         title: const Text('PulseOps'),
         actions: [
+          IconButton(
+            tooltip: 'Memory',
+            icon: const Icon(Icons.memory_rounded),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => Theme(
+                  data: Theme.of(context),
+                  child: const MemoryScreen(),
+                ),
+              ),
+            ),
+          ),
           IconButton(
             tooltip: 'Performance',
             icon: const Icon(Icons.speed_rounded),
