@@ -206,16 +206,14 @@ class _HomeScreenState extends State<_HomeScreen> {
 
             // ── Network ───────────────────────────────────────────────────
             const _SectionLabel('🌐 Network'),
-            _DemoButton(
-                label: 'GET /posts/1', onPressed: _get),
+            _DemoButton(label: 'GET /posts/1', onPressed: _get),
             _DemoButton(
                 label: 'POST /posts (sanitized header)', onPressed: _post),
             _DemoButton(
                 label: 'Failing GET → triggers event exporter',
                 onPressed: _failing,
                 danger: true),
-            _DemoButton(
-                label: 'Multipart upload', onPressed: _multipart),
+            _DemoButton(label: 'Multipart upload', onPressed: _multipart),
             const SizedBox(height: 24),
 
             // ── Memory ────────────────────────────────────────────────────
@@ -309,9 +307,8 @@ class _DemoButton extends StatelessWidget {
           : FilledButton(
               onPressed: onPressed,
               style: FilledButton.styleFrom(
-                backgroundColor: danger
-                    ? cs.error.withValues(alpha: 0.15)
-                    : null,
+                backgroundColor:
+                    danger ? cs.error.withValues(alpha: 0.15) : null,
                 foregroundColor: danger ? cs.error : null,
               ),
               child: Text(label),
