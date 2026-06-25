@@ -4,6 +4,77 @@ All notable changes to **PulseOps** will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/) and
 this project adheres to [Semantic Versioning](https://semver.org/).
 
+## 1.4.0 — 2026-06-25
+
+### 🧪 Test Observability
+
+#### Testing Tools
+
+- **Widget test logging** — `PulseTestObserver.log()` captures freeform messages
+  into the active test session with severity levels (debug / info / warning / error).
+- **Integration test tracking** — `PulseTestObserver.beginTest()` /
+  `PulseTestObserver.endTest()` create bounded `TestSession` records with name,
+  group, status, timing, and a full event timeline.
+- **API logs during tests** — `PulseTestObserver.captureNetworkRequest()` attaches
+  any `NetworkRecord` from `PulseDioInterceptor` to the active session, so you can
+  see exactly which API calls were made (and whether they succeeded) per test.
+- **Test timelines** — each session stores an ordered `List<TestEvent>` with typed
+  events: `log`, `networkRequest`, `assertion`, `widgetPump`, `performance`,
+  `failure` — visible as a visual connector timeline in the inspector.
+- **Failure diagnostics** — `PulseTestObserver.endTest(passed: false,
+  failureMessage: ..., stackTrace: ...)` records the failure with up to 12 lines
+  of stack trace displayed in the inspector.
+- **Assertion tracking** — `PulseTestObserver.assertion(description)` records
+  named assertion results, coloured green (pass) or red (fail) in the timeline.
+- **Widget pump events** — `PulseTestObserver.pump(frameCount:, duration:)` logs
+  pump calls so you can correlate widget rebuilds with API activity.
+- **Performance snapshots** — `PulseTestObserver.capturePerformance(fps:,
+  droppedFrames:)` stores FPS/jank data captured during a test.
+
+#### Reporting
+
+- **Exportable test reports** — the Test screen shares reports in **JSON**
+  (structured, machine-readable) or **plain text** (human-readable per-session
+  block) via the platform share sheet, falling back to clipboard.
+- **Pass-rate summary bar** — total / passed / failed counts and percentage pass
+  rate shown at the top of the Test screen.
+- **Debug logs attachment** — exported JSON includes per-session events and network
+  request summaries, making the report self-contained for CI artefact upload.
+
+#### New Public API
+
+- **`TestStore`** — in-memory ring-buffer (default 100 sessions, configurable via
+  `PulseOpsConfig.maxTestSessions`) with `beginSession` / `endSession` /
+  `logEvent` / `recordNetworkRequest` / `recordPerformance` and a reactive
+  `stream`.
+- **`PulseTestObserver`** — static helper; attach a store once per test run with
+  `PulseTestObserver.attach(PulseOps.instance.testStore)`, then use `beginTest` /
+  `endTest` / `log` / `assertion` / `pump` / `captureNetworkRequest` /
+  `capturePerformance`.
+- **`TestReportExporter`** — serialises sessions to JSON or plain text.
+- **`TestSession`** / **`TestEvent`** / **`TestSessionStatus`** / **`TestEventType`**
+  — immutable value types exported from the public API.
+- **`PulseOpsConfig.enableTestObservability`** — opt-in flag (default `false`).
+- **`PulseOpsConfig.maxTestSessions`** — ring-buffer capacity (default `100`).
+
+### 🔬 Inspector: Tests Screen
+
+- New **🧪 toolbar button** in the inspector opens the Test Observability screen
+  showing a session list with status dots, group labels, failure previews,
+  network/event badges, and a pass-rate summary bar.
+- Session detail screen shows a **connector-style event timeline** with typed
+  badges (LOG / NET / ASSERT / PUMP / PERF / FAIL), per-event timing, and a
+  dedicated API log section with method chip, endpoint, status, and duration.
+
+### 🛠 Enhancements & Bug Fixes
+
+- **`InMemoryNetworkStore`** — replaced the O(n) linear scan in `findById` and
+  `update` with an `id → record` hash map index. Both are now O(1), eliminating
+  a latency spike on large request histories (previously O(n²) on `update`).
+- **`FileBackedNetworkStore._persist()`** — added a `try/catch` around
+  `writeAsStringSync`; disk-full and permission errors are now silently suppressed
+  instead of crashing the app mid-request.
+
 ## 1.3.0 — 2026-06-04
 
 ### 🧠 Memory Monitoring

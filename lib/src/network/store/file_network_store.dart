@@ -66,9 +66,13 @@ class FileBackedNetworkStore extends InMemoryNetworkStore {
   void _persist() {
     final file = _file;
     if (file == null) return;
-    final json = jsonEncode(
-      records.map((r) => r.toJson()).toList(growable: false),
-    );
-    file.writeAsStringSync(json, flush: true);
+    try {
+      final json = jsonEncode(
+        records.map((r) => r.toJson()).toList(growable: false),
+      );
+      file.writeAsStringSync(json, flush: true);
+    } catch (_) {
+      // Disk full / permissions error — silently skip to avoid crashing the app.
+    }
   }
 }

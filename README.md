@@ -35,7 +35,7 @@
   />
 </p>
 
-PulseOps ships with four focused capabilities:
+PulseOps ships with five focused capabilities:
 
 1. **🌐 Network Inspector** — a Dio interceptor that records every request,
    pretty-prints JSON, exports cURL, retries calls, and presents it all in a
@@ -48,6 +48,9 @@ PulseOps ships with four focused capabilities:
 4. **💥 Crash Diagnostics** — pluggable bridge to Firebase Crashlytics (or any
    backend) with rich breadcrumbs and automatic attachment of recent API
    activity to every crash report.
+5. **🧪 Test Observability** — per-test session tracking with event timelines,
+   API log capture, assertion recording, failure diagnostics, and exportable
+   reports.
 
 ---
 
@@ -65,6 +68,8 @@ PulseOps ships with four focused capabilities:
   time, and API latency bar chart
 - 🧠 **Memory monitor** — RSS sparkline, spike warnings, leak list, widget
   lifecycle breakdown, and rebuild frequency — all live
+- 🧪 **Test observability** — per-test session timeline, API log capture,
+  assertion recording, failure diagnostics, and JSON/text report export
 - 💾 **Persistent network store** — `FileBackedNetworkStore` survives app
   restarts with zero extra setup
 - 📡 **Unified event exporter** — one interface to forward every failed request
@@ -86,7 +91,7 @@ PulseOps ships with four focused capabilities:
 
 ```yaml
 dependencies:
-  pulse_ops: ^1.3.0
+  pulse_ops: ^1.4.0
   dio: ^5.4.0
 ```
 
@@ -536,11 +541,18 @@ lib/
     │   ├── tracked_object.dart            # object lifecycle record
     │   ├── memory_store.dart             # ring-buffer + leak map + rebuild counts
     │   └── memory_monitor.dart           # RSS polling + FlutterMemoryAllocations
+    ├── testing/
+    │   ├── test_event.dart               # TestEvent value type
+    │   ├── test_session.dart             # TestSession value type
+    │   ├── test_store.dart              # ring-buffer + stream
+    │   ├── pulse_test_observer.dart      # static helper for test files
+    │   └── test_report_exporter.dart     # JSON / plain-text report serialiser
     ├── crash/                             # breadcrumbs + reporter + bridge
     ├── ui/
     │   ├── inspector/                     # screens, tabs, widgets
     │   ├── performance/                   # PerformanceScreen + charts
     │   ├── memory/                        # MemoryScreen + RSS chart
+    │   ├── testing/                       # TestScreen + TestSessionScreen
     │   ├── overlay/                       # draggable launcher + shake detector
     │   └── theme/                         # dark Material 3 theme
     └── providers/                         # Riverpod scope
@@ -570,8 +582,83 @@ flutter test
 
 ---
 
+---
+
+## 🧪 Test Observability
+
+Track what happens inside each Flutter test — widget logs, API calls,
+assertions, pump events, and performance snapshots — then review or export
+the results from the inspector.
+
+### Quick setup
+
+```dart
+// test/widget_test.dart
+import 'package:flutter_test/flutter_test.dart';
+import 'package:pulse_ops/pulse_ops.dart';
+
+void main() {
+  setUpAll(() async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    await PulseOps.initialize(config: const PulseOpsConfig(enableInRelease: true));
+    PulseTestObserver.attach(PulseOps.instance.testStore);
+  });
+
+  tearDownAll(() => PulseTestObserver.detach());
+
+  group('auth', () {
+    setUp(() => PulseTestObserver.beginTest('login success', group: 'auth'));
+    tearDown(() => PulseTestObserver.endTest());
+
+    testWidgets('user can log in', (tester) async {
+      PulseTestObserver.log('pumping login screen');
+      await tester.pumpWidget(const MyApp());
+      PulseTestObserver.pump(frameCount: 1);
+
+      PulseTestObserver.assertion('login button is visible');
+      expect(find.text('Log in'), findsOneWidget);
+    });
+  });
+}
+```
+
+### Capturing API calls during tests
+
+```dart
+// Wire captureNetworkRequest into your event exporter or store listener:
+PulseOps.instance.store.stream.listen((records) {
+  for (final r in records) {
+    PulseTestObserver.captureNetworkRequest(r);
+  }
+});
+```
+
+### Exporting reports programmatically
+
+```dart
+final report = PulseTestObserver.exporter.export(
+  PulseOps.instance.testStore.sessions,
+  format: TestReportFormat.json,
+);
+File('test-report.json').writeAsStringSync(report);
+```
+
+### What's tracked per session
+
+| Item | How |
+| --- | --- |
+| **Log messages** | `PulseTestObserver.log(message)` |
+| **Assertions** | `PulseTestObserver.assertion(description)` |
+| **Widget pumps** | `PulseTestObserver.pump(frameCount:)` |
+| **Network calls** | `PulseTestObserver.captureNetworkRequest(record)` |
+| **Performance** | `PulseTestObserver.capturePerformance(fps:, droppedFrames:)` |
+| **Failures** | `PulseTestObserver.endTest(passed: false, failureMessage: ...)` |
+
+---
+
 ## 🛣 Roadmap
 
+- [x] Test observability — session tracking, API logs, timelines, report export *(v1.4)*
 - [x] Memory monitoring — RSS, leaks, lifecycle, rebuild tracking *(v1.3)*
 - [x] Persistent network store + unified event exporter *(v1.3)*
 - [x] Real-time FPS monitor, frame drop detection, API latency chart *(v1.2)*

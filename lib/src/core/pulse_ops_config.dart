@@ -19,6 +19,8 @@ class PulseOpsConfig {
     this.enableInRelease = false,
     this.maxRecords = 200,
     this.maxBreadcrumbs = 50,
+    this.enableTestObservability = false,
+    this.maxTestSessions = 100,
     this.sanitizeKeys = const <String>[
       'authorization',
       'token',
@@ -58,6 +60,14 @@ class PulseOpsConfig {
 
   /// Maximum number of breadcrumbs retained for crash reporting.
   final int maxBreadcrumbs;
+
+  /// When `true`, the test observability toolbar button appears in the
+  /// inspector and [PulseOps.testStore] is ready to accept sessions via
+  /// [PulseTestObserver].
+  final bool enableTestObservability;
+
+  /// Maximum number of test sessions retained in the ring buffer.
+  final int maxTestSessions;
 
   /// Header / body keys whose values should be redacted from inspector views,
   /// breadcrumbs, and crash reports.
@@ -117,6 +127,8 @@ class PulseOpsConfig {
     bool? enableInRelease,
     int? maxRecords,
     int? maxBreadcrumbs,
+    bool? enableTestObservability,
+    int? maxTestSessions,
     List<String>? sanitizeKeys,
     bool? attachNetworkHistoryToCrashes,
     bool? showOverlay,
@@ -135,6 +147,9 @@ class PulseOpsConfig {
       enableInRelease: enableInRelease ?? this.enableInRelease,
       maxRecords: maxRecords ?? this.maxRecords,
       maxBreadcrumbs: maxBreadcrumbs ?? this.maxBreadcrumbs,
+      enableTestObservability:
+          enableTestObservability ?? this.enableTestObservability,
+      maxTestSessions: maxTestSessions ?? this.maxTestSessions,
       sanitizeKeys: sanitizeKeys ?? this.sanitizeKeys,
       attachNetworkHistoryToCrashes:
           attachNetworkHistoryToCrashes ?? this.attachNetworkHistoryToCrashes,

@@ -6,8 +6,7 @@ late final Dio dio;
 
 // ── Demo PulseEventExporter ──────────────────────────────────────────────────
 //
-// In a real app replace `debugPrint` with your analytics SDK
-// (Mixpanel, Amplitude, your own backend, etc.).
+// In a real app replace `debugPrint` with your analytics SDK.
 class _DemoEventExporter implements PulseEventExporter {
   @override
   Future<void> onFailedRequest(NetworkRecord record) async {
@@ -40,8 +39,6 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // ── Persistent network store ──────────────────────────────────────────────
-  // Swap InMemoryNetworkStore for FileBackedNetworkStore to survive restarts.
-  // Records are restored from disk on initialize() and written on every capture.
   final networkStore = FileBackedNetworkStore(maxRecords: 200);
   await networkStore.initialize();
 
@@ -49,18 +46,21 @@ Future<void> main() async {
     config: const PulseOpsConfig(
       maxRecords: 200,
       sanitizeKeys: ['authorization', 'token', 'password', 'cookie'],
-      // Memory monitoring is on by default — tune here if needed:
       enableMemoryMonitor: true,
       memorySampleIntervalSeconds: 2,
       memorySnapshotBufferSize: 120,
+      // Enable the test observability screen in the inspector.
+      enableTestObservability: true,
+      maxTestSessions: 50,
     ),
-    // ── Persistent store ────────────────────────────────────────────────────
     networkStore: networkStore,
-    // ── Unified event exporter ───────────────────────────────────────────────
-    // Receives every failed request AND every crash in one place.
     eventExporter: _DemoEventExporter(),
-    // crashReporter: FirebaseCrashReporterAdapter(FirebaseCrashlytics.instance),
   );
+
+  // ── Test Observability ────────────────────────────────────────────────────
+  // Attach the test store once so PulseTestObserver.beginTest() / endTest()
+  // work everywhere.  In real test files you do this in setUpAll().
+  PulseTestObserver.attach(PulseOps.instance.testStore);
 
   dio = Dio(BaseOptions(baseUrl: 'https://jsonplaceholder.typicode.com'))
     ..interceptors.add(PulseOps.instance.dioInterceptor);
@@ -97,17 +97,15 @@ class _HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<_HomeScreen> {
-  // Tracks controllers we intentionally leak for demo purposes.
   final List<TextEditingController> _leakedControllers = [];
-
-  // A properly managed controller — disposed in dispose().
   final TextEditingController _managedController = TextEditingController();
+
+  // Tracks whether a test session is currently active.
+  bool _testActive = false;
 
   @override
   void dispose() {
     _managedController.dispose();
-    // _leakedControllers are intentionally NOT disposed here to trigger leak
-    // detection in the Memory screen.
     super.dispose();
   }
 
@@ -124,9 +122,7 @@ class _HomeScreenState extends State<_HomeScreen> {
   Future<void> _failing() async {
     try {
       await dio.get<dynamic>('/this-endpoint-does-not-exist');
-    } catch (_) {
-      // Error forwarded to _DemoEventExporter.onFailedRequest automatically.
-    }
+    } catch (_) {}
   }
 
   Future<void> _multipart() async {
@@ -156,7 +152,6 @@ class _HomeScreenState extends State<_HomeScreen> {
 
   // ── Memory ────────────────────────────────────────────────────────────────
 
-  /// Creates a controller and immediately disposes it — no leak.
   void _allocateAndDispose(BuildContext context) {
     final c = TextEditingController();
     c.dispose();
@@ -165,7 +160,6 @@ class _HomeScreenState extends State<_HomeScreen> {
     );
   }
 
-  /// Creates a controller but never disposes it — shows up as a leak after 30s.
   void _allocateLeak(BuildContext context) {
     _leakedControllers.add(TextEditingController());
     ScaffoldMessenger.of(context).showSnackBar(
@@ -179,15 +173,168 @@ class _HomeScreenState extends State<_HomeScreen> {
     );
   }
 
-  /// Manually records a rebuild so the Memory screen shows rebuild frequency.
   void _triggerRebuild() {
     PulseOps.instance.memoryStore.recordRebuild('_HomeScreen');
-    setState(() {}); // force a real rebuild too
+    setState(() {});
+  }
+
+  // ── Test Observability ────────────────────────────────────────────────────
+
+  /// Simulates a complete passing test: begin → log → API call → assertion → end.
+  Future<void> _simulatePassingTest(BuildContext context) async {
+    setState(() => _testActive = true);
+
+    PulseTestObserver.beginTest('fetch post returns 200', group: 'Network');
+    PulseTestObserver.log('Arranging: setting up Dio client');
+
+    // Fire a real API call — captured by the test session automatically
+    // because PulseDioInterceptor records it, and we forward it via the
+    // network store listener set up below.
+    try {
+      final response = await dio.get<dynamic>('/posts/1');
+      PulseTestObserver.assertion(
+        'status code is 200',
+        passed: response.statusCode == 200,
+      );
+      PulseTestObserver.assertion(
+        'response body is a Map',
+        passed: response.data is Map,
+      );
+    } catch (e) {
+      PulseTestObserver.assertion('request succeeds', passed: false);
+    }
+
+    PulseTestObserver.pump(frameCount: 2);
+
+    // Capture a simulated performance reading.
+    PulseTestObserver.capturePerformance(fps: 59.4, droppedFrames: 1);
+
+    // Capture the latest network record into the test session.
+    final records = PulseOps.instance.store.records;
+    if (records.isNotEmpty) {
+      PulseTestObserver.captureNetworkRequest(records.first);
+    }
+
+    PulseTestObserver.endTest();
+    setState(() => _testActive = false);
+
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+          content: Text('Passing test session recorded — open Tests tab')),
+    );
+  }
+
+  /// Simulates a failing test with a failure message and stack trace.
+  Future<void> _simulateFailingTest(BuildContext context) async {
+    setState(() => _testActive = true);
+
+    PulseTestObserver.beginTest('user can log in', group: 'Auth');
+    PulseTestObserver.log('Arranging: loading login screen');
+    PulseTestObserver.pump(frameCount: 1);
+
+    PulseTestObserver.log('Acting: tapping login button');
+    PulseTestObserver.pump(duration: const Duration(milliseconds: 300));
+
+    PulseTestObserver.assertion('login button is visible', passed: true);
+    PulseTestObserver.assertion(
+      'welcome text appears after login',
+      passed: false,
+    );
+
+    PulseTestObserver.endTest(
+      passed: false,
+      failureMessage: "Expected: exactly one widget with text 'Welcome'\n"
+          "  Actual: no widgets found with text 'Welcome'",
+      stackTrace: "#0  expect (package:flutter_test/src/expect.dart:168)\n"
+          "#1  _HomeScreenState._simulateFailingTest (example/lib/main.dart)\n"
+          "#2  _DemoButton.onPressed (example/lib/main.dart)",
+    );
+
+    setState(() => _testActive = false);
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+          content: Text('Failing test session recorded — open Tests tab')),
+    );
+  }
+
+  /// Runs a mini suite: three tests in sequence.
+  Future<void> _simulateSuite(BuildContext context) async {
+    setState(() => _testActive = true);
+
+    // Test 1 — pass
+    PulseTestObserver.beginTest('GET /posts returns list', group: 'Posts API');
+    PulseTestObserver.log('Fetching posts endpoint');
+    try {
+      final r = await dio.get<dynamic>('/posts?_limit=3');
+      PulseTestObserver.assertion('status 200', passed: r.statusCode == 200);
+      PulseTestObserver.assertion('returns a list', passed: r.data is List);
+      if (PulseOps.instance.store.records.isNotEmpty) {
+        PulseTestObserver.captureNetworkRequest(
+            PulseOps.instance.store.records.first);
+      }
+    } catch (_) {
+      PulseTestObserver.assertion('request succeeds', passed: false);
+    }
+    PulseTestObserver.endTest();
+
+    // Test 2 — pass
+    PulseTestObserver.beginTest('POST /posts creates entry',
+        group: 'Posts API');
+    PulseTestObserver.log('Posting a new record');
+    try {
+      final r = await dio.post<dynamic>(
+        '/posts',
+        data: {'title': 'test', 'body': 'body', 'userId': 99},
+      );
+      PulseTestObserver.assertion('status 201', passed: r.statusCode == 201);
+      if (PulseOps.instance.store.records.isNotEmpty) {
+        PulseTestObserver.captureNetworkRequest(
+            PulseOps.instance.store.records.first);
+      }
+    } catch (_) {
+      PulseTestObserver.assertion('post succeeds', passed: false);
+    }
+    PulseTestObserver.endTest();
+
+    // Test 3 — fail (expected 204 but gets 200 from JSONPlaceholder)
+    PulseTestObserver.beginTest('DELETE /posts/1 returns 204',
+        group: 'Posts API');
+    PulseTestObserver.log('Sending DELETE request');
+    try {
+      final r = await dio.delete<dynamic>('/posts/1');
+      final passed = r.statusCode == 204;
+      PulseTestObserver.assertion('status is 204', passed: passed);
+      if (PulseOps.instance.store.records.isNotEmpty) {
+        PulseTestObserver.captureNetworkRequest(
+            PulseOps.instance.store.records.first);
+      }
+      if (!passed) {
+        PulseTestObserver.endTest(
+          passed: false,
+          failureMessage: 'Expected status 204 but got ${r.statusCode}',
+        );
+      } else {
+        PulseTestObserver.endTest();
+      }
+    } catch (_) {
+      PulseTestObserver.endTest(
+          passed: false, failureMessage: 'Request threw an exception');
+    }
+
+    setState(() => _testActive = false);
+
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+          content: Text('Suite complete (3 tests) — open Tests tab')),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    // Record every rebuild so the Memory screen can track frequency.
     PulseOps.instance.memoryStore.recordRebuild('_HomeScreen');
 
     return Scaffold(
@@ -199,7 +346,7 @@ class _HomeScreenState extends State<_HomeScreen> {
           children: [
             const Text(
               'Tap the floating button or use "Open Inspector" to explore '
-              'network traffic, performance, and memory.',
+              'network traffic, performance, memory, and test sessions.',
               style: TextStyle(fontSize: 13, height: 1.5),
             ),
             const SizedBox(height: 24),
@@ -231,9 +378,42 @@ class _HomeScreenState extends State<_HomeScreen> {
               label: 'Force rebuild (increments counter)',
               onPressed: _triggerRebuild,
             ),
+            const SizedBox(height: 24),
+
+            // ── Test Observability ────────────────────────────────────────
+            const _SectionLabel('🧪 Test Observability'),
+            if (_testActive)
+              const Padding(
+                padding: EdgeInsets.only(bottom: 10),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    SizedBox(width: 8),
+                    Text(
+                      'Test session running…',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
             _DemoButton(
-              label: 'Open Memory screen',
-              onPressed: () => PulseOps.instance.openInspector(context),
+              label: 'Simulate passing test (with real API call)',
+              onPressed:
+                  _testActive ? () {} : () => _simulatePassingTest(context),
+            ),
+            _DemoButton(
+              label: 'Simulate failing test (with assertions)',
+              onPressed:
+                  _testActive ? () {} : () => _simulateFailingTest(context),
+              danger: true,
+            ),
+            _DemoButton(
+              label: 'Run mini suite (3 tests, 1 fails)',
+              onPressed: _testActive ? () {} : () => _simulateSuite(context),
             ),
             const SizedBox(height: 24),
 
@@ -245,7 +425,7 @@ class _HomeScreenState extends State<_HomeScreen> {
               outlined: true,
             ),
             _DemoButton(
-              label: 'Open Inspector',
+              label: 'Open Inspector  (→ tap 🧪 for tests)',
               onPressed: () =>
                   PulseOps.instance.openInspector(context, retryDio: dio),
               outlined: true,

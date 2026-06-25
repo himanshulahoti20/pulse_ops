@@ -13,6 +13,7 @@ import '../network/store/network_store.dart';
 import '../performance/fps_tracker.dart';
 import '../performance/performance_store.dart';
 import '../providers/providers.dart';
+import '../testing/test_store.dart';
 import '../ui/overlay/pulse_overlay.dart';
 import 'pulse_event_exporter.dart';
 import 'pulse_ops_config.dart';
@@ -35,6 +36,7 @@ class PulseOps {
     required this.enabled,
     required this.performanceStore,
     required this.memoryStore,
+    required this.testStore,
     this.eventExporter,
   });
 
@@ -59,6 +61,11 @@ class PulseOps {
   final PulseDioInterceptor dioInterceptor;
   final PerformanceStore performanceStore;
   final MemoryStore memoryStore;
+
+  /// Ring-buffer store for test sessions. Wire it up with [PulseTestObserver]
+  /// in your test files to track widget test logs, API calls, assertions,
+  /// and failure diagnostics.
+  final TestStore testStore;
 
   /// Optional sink that receives every failed request and every crash so the
   /// host app can forward them to its own analytics backend.
@@ -128,6 +135,8 @@ class PulseOps {
     final memStore =
         MemoryStore(maxSnapshots: effectiveConfig.memorySnapshotBufferSize);
 
+    final testStore = TestStore(maxSessions: effectiveConfig.maxTestSessions);
+
     if (installGlobalErrorHandlers && enabled) {
       diagnostics.installGlobalErrorHandlers();
     }
@@ -150,6 +159,7 @@ class PulseOps {
       enabled: enabled,
       performanceStore: perfStore,
       memoryStore: memStore,
+      testStore: testStore,
       eventExporter: eventExporter,
     );
 
@@ -167,6 +177,7 @@ class PulseOps {
         crashDiagnosticsProvider.overrideWithValue(crashDiagnostics),
         performanceStoreProvider.overrideWithValue(performanceStore),
         memoryStoreProvider.overrideWithValue(memoryStore),
+        testStoreProvider.overrideWithValue(testStore),
       ],
       child: PulseOverlay(
         config: config,
@@ -174,6 +185,7 @@ class PulseOps {
         crashDiagnostics: crashDiagnostics,
         performanceStore: performanceStore,
         memoryStore: memoryStore,
+        testStore: testStore,
         retryDio: retryDio,
         child: child,
       ),
@@ -189,6 +201,7 @@ class PulseOps {
       crashDiagnostics: crashDiagnostics,
       performanceStore: performanceStore,
       memoryStore: memoryStore,
+      testStore: testStore,
       retryDio: retryDio,
     );
   }
@@ -220,6 +233,7 @@ class PulseOps {
     _instance?.store.dispose();
     _instance?.performanceStore.dispose();
     _instance?.memoryStore.dispose();
+    _instance?.testStore.dispose();
     _instance = null;
   }
 }
