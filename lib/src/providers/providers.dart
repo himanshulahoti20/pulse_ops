@@ -9,6 +9,8 @@ import '../network/models/network_record.dart';
 import '../network/store/network_store.dart';
 import '../performance/frame_metric.dart';
 import '../performance/performance_store.dart';
+import '../testing/test_session.dart';
+import '../testing/test_store.dart';
 
 /// Public Riverpod providers used by the inspector UI.
 final pulseOpsConfigProvider = Provider<PulseOpsConfig>((ref) {
@@ -65,6 +67,21 @@ final potentialLeaksProvider = StreamProvider<List<TrackedObject>>((ref) {
 }).select((async) => async.maybeWhen(
       data: (objects) => objects.where((o) => o.isPotentialLeak).toList(),
       orElse: () => const <TrackedObject>[],
+    ));
+
+// ── Testing ────────────────────────────────────────────────────────────────
+
+final testStoreProvider = Provider<TestStore>((ref) {
+  throw UnimplementedError('TestStore must be provided via overrides');
+});
+
+/// Reactive list of test sessions (newest first).
+final testSessionsProvider = StreamProvider<List<TestSession>>((ref) {
+  final store = ref.watch(testStoreProvider);
+  return store.stream.asBroadcastStream();
+}).select((async) => async.maybeWhen(
+      data: (s) => s,
+      orElse: () => const <TestSession>[],
     ));
 
 // ── Inspector filter ───────────────────────────────────────────────────────

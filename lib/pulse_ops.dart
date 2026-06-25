@@ -29,3 +29,9 @@ export 'src/memory/memory_snapshot.dart' show MemorySnapshot;
 export 'src/memory/memory_store.dart' show MemoryStore;
 export 'src/memory/tracked_object.dart' show TrackedObject;
 export 'src/core/pulse_event_exporter.dart' show PulseEventExporter;
+export 'src/testing/test_event.dart' show TestEvent, TestEventType;
+export 'src/testing/test_session.dart' show TestSession, TestSessionStatus;
+export 'src/testing/test_store.dart' show TestStore;
+export 'src/testing/pulse_test_observer.dart' show PulseTestObserver;
+export 'src/testing/test_report_exporter.dart'
+    show TestReportExporter, TestReportFormat;

@@ -9,6 +9,7 @@ import '../../network/utils/log_exporter.dart';
 import '../../providers/providers.dart';
 import '../memory/memory_screen.dart';
 import '../performance/performance_screen.dart';
+import '../testing/test_screen.dart';
 import '../theme/pulse_theme.dart';
 import 'request_details_screen.dart';
 import 'widgets/empty_state.dart';
@@ -77,6 +78,18 @@ class _InspectorScreenState extends ConsumerState<InspectorScreen> {
                 builder: (_) => Theme(
                   data: Theme.of(context),
                   child: const PerformanceScreen(),
+                ),
+              ),
+            ),
+          ),
+          IconButton(
+            tooltip: 'Tests',
+            icon: const Icon(Icons.science_rounded),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => Theme(
+                  data: Theme.of(context),
+                  child: const TestScreen(),
                 ),
               ),
             ),

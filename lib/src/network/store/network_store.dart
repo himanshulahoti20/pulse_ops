@@ -24,6 +24,10 @@ class InMemoryNetworkStore implements NetworkStore {
   final int maxRecords;
 
   final Queue<NetworkRecord> _records = Queue<NetworkRecord>();
+
+  // O(1) lookup index — kept in sync with _records.
+  final Map<String, NetworkRecord> _index = {};
+
   final _controller =
       StreamController<List<NetworkRecord>>.broadcast(sync: false);
 
@@ -34,38 +38,27 @@ class InMemoryNetworkStore implements NetworkStore {
   List<NetworkRecord> get records => List.unmodifiable(_records);
 
   @override
-  NetworkRecord? findById(String id) {
-    for (final r in _records) {
-      if (r.id == id) return r;
-    }
-    return null;
-  }
+  NetworkRecord? findById(String id) => _index[id];
 
   @override
   void add(NetworkRecord record) {
     _records.addFirst(record);
-    while (_records.length > maxRecords) {
-      _records.removeLast();
+    _index[record.id] = record;
+    if (_records.length > maxRecords) {
+      final evicted = _records.removeLast();
+      _index.remove(evicted.id);
     }
     _emit();
   }
 
   @override
   void update(NetworkRecord record) {
-    final updated = <NetworkRecord>[];
-    var replaced = false;
-    for (final r in _records) {
-      if (r.id == record.id) {
-        updated.add(record);
-        replaced = true;
-      } else {
-        updated.add(r);
-      }
-    }
-    if (!replaced) {
+    if (!_index.containsKey(record.id)) {
       add(record);
       return;
     }
+    _index[record.id] = record;
+    final updated = _records.map((r) => r.id == record.id ? record : r);
     _records
       ..clear()
       ..addAll(updated);
@@ -75,6 +68,7 @@ class InMemoryNetworkStore implements NetworkStore {
   @override
   void clear() {
     _records.clear();
+    _index.clear();
     _emit();
   }
 

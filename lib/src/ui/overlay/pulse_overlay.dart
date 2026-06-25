@@ -8,6 +8,7 @@ import '../../memory/memory_store.dart';
 import '../../network/store/network_store.dart';
 import '../../performance/performance_store.dart';
 import '../../providers/providers.dart';
+import '../../testing/test_store.dart';
 import '../inspector/inspector_screen.dart';
 import '../theme/pulse_theme.dart';
 import 'shake_detector.dart';
@@ -21,6 +22,7 @@ Future<void> showPulseInspector(
   required CrashDiagnostics crashDiagnostics,
   required PerformanceStore performanceStore,
   required MemoryStore memoryStore,
+  required TestStore testStore,
   Dio? retryDio,
 }) {
   final navigator = Navigator.of(context, rootNavigator: true);
@@ -30,6 +32,7 @@ Future<void> showPulseInspector(
     crashDiagnosticsProvider.overrideWithValue(crashDiagnostics),
     performanceStoreProvider.overrideWithValue(performanceStore),
     memoryStoreProvider.overrideWithValue(memoryStore),
+    testStoreProvider.overrideWithValue(testStore),
   ];
 
   if (config.inspectorPresentation == InspectorPresentation.fullScreen) {
@@ -120,6 +123,7 @@ class PulseOverlay extends StatefulWidget {
     required this.crashDiagnostics,
     required this.performanceStore,
     required this.memoryStore,
+    required this.testStore,
     this.retryDio,
   });
 
@@ -129,6 +133,7 @@ class PulseOverlay extends StatefulWidget {
   final CrashDiagnostics crashDiagnostics;
   final PerformanceStore performanceStore;
   final MemoryStore memoryStore;
+  final TestStore testStore;
   final Dio? retryDio;
 
   @override
@@ -190,6 +195,7 @@ class _PulseOverlayState extends State<PulseOverlay> {
         crashDiagnostics: widget.crashDiagnostics,
         performanceStore: widget.performanceStore,
         memoryStore: widget.memoryStore,
+        testStore: widget.testStore,
         retryDio: widget.retryDio,
       );
     } finally {
