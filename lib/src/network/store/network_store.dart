@@ -58,7 +58,8 @@ class InMemoryNetworkStore implements NetworkStore {
       return;
     }
     _index[record.id] = record;
-    final updated = _records.map((r) => r.id == record.id ? record : r);
+    final updated =
+        _records.map((r) => r.id == record.id ? record : r).toList();
     _records
       ..clear()
       ..addAll(updated);
