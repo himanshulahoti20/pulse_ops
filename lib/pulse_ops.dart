@@ -14,6 +14,15 @@ export 'src/crash/crash_reporter.dart'
     show PulseCrashReporter, NoopCrashReporter;
 export 'src/network/interceptor/pulse_dio_interceptor.dart'
     show PulseDioInterceptor;
+export 'src/network/models/graphql_info.dart' show GraphQLInfo;
+export 'src/network/throttle.dart' show NetworkThrottle;
+export 'src/ui/theme/pulse_theme.dart' show PulsePalette;
+export 'src/websocket/websocket_log.dart'
+    show
+        WebSocketLogStore,
+        WebSocketSession,
+        WebSocketMessage,
+        WebSocketDirection;
 export 'src/network/models/network_record.dart'
     show NetworkRecord, NetworkStatus;
 export 'src/network/store/network_store.dart'

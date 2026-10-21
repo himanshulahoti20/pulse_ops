@@ -7,26 +7,59 @@ import 'method_chip.dart';
 import 'status_chip.dart';
 
 class RequestTile extends StatelessWidget {
-  const RequestTile({super.key, required this.record, required this.onTap});
+  const RequestTile({
+    super.key,
+    required this.record,
+    required this.onTap,
+    this.selected = false,
+    this.animate = false,
+  });
 
   final NetworkRecord record;
   final VoidCallback onTap;
+
+  /// Highlights the tile (master-detail layout).
+  final bool selected;
+
+  /// Fade + slide in on first build.
+  final bool animate;
 
   static final _timeFmt = DateFormat('HH:mm:ss.SSS');
 
   @override
   Widget build(BuildContext context) {
+    final tile = _build();
+    if (!animate) return tile;
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: const Duration(milliseconds: 280),
+      curve: Curves.easeOutCubic,
+      builder: (context, t, child) => Opacity(
+        opacity: t,
+        child:
+            Transform.translate(offset: Offset(0, (1 - t) * 14), child: child),
+      ),
+      child: tile,
+    );
+  }
+
+  Widget _build() {
+    final gql = record.graphql;
+    final compact = PulseTheme.compact.value;
     return Material(
       color: Colors.transparent,
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
         onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          padding:
+              EdgeInsets.symmetric(horizontal: 14, vertical: compact ? 7 : 12),
           decoration: BoxDecoration(
-            color: PulseTheme.surface,
+            color: selected ? PulseTheme.surfaceAlt : PulseTheme.surface,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: PulseTheme.border),
+            border: Border.all(
+              color: selected ? PulseTheme.accent : PulseTheme.border,
+            ),
           ),
           child: Row(
             children: [
@@ -37,17 +70,19 @@ class RequestTile extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      record.endpoint,
+                      gql == null
+                          ? record.endpoint
+                          : '${record.endpoint} · ${gql.label}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: PulseTheme.textPrimary,
                         fontWeight: FontWeight.w600,
                         fontFamily: 'monospace',
                         fontSize: 13,
                       ),
                     ),
-                    const SizedBox(height: 3),
+                    SizedBox(height: compact ? 1 : 3),
                     Row(
                       children: [
                         Flexible(
@@ -55,7 +90,7 @@ class RequestTile extends StatelessWidget {
                             record.host,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: PulseTheme.textSecondary,
                               fontSize: 11,
                             ),
@@ -65,7 +100,7 @@ class RequestTile extends StatelessWidget {
                         Container(
                           height: 2,
                           width: 2,
-                          decoration: const BoxDecoration(
+                          decoration: BoxDecoration(
                             color: PulseTheme.textSecondary,
                             shape: BoxShape.circle,
                           ),
@@ -73,7 +108,7 @@ class RequestTile extends StatelessWidget {
                         const SizedBox(width: 8),
                         Text(
                           _timeFmt.format(record.startedAt),
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: PulseTheme.textSecondary,
                             fontSize: 11,
                           ),
@@ -83,7 +118,7 @@ class RequestTile extends StatelessWidget {
                           Container(
                             height: 2,
                             width: 2,
-                            decoration: const BoxDecoration(
+                            decoration: BoxDecoration(
                               color: PulseTheme.textSecondary,
                               shape: BoxShape.circle,
                             ),
@@ -91,7 +126,7 @@ class RequestTile extends StatelessWidget {
                           const SizedBox(width: 8),
                           Text(
                             '${record.duration.inMilliseconds}ms',
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: PulseTheme.textSecondary,
                               fontSize: 11,
                             ),

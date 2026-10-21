@@ -19,10 +19,14 @@ class RequestDetailsScreen extends ConsumerWidget {
     super.key,
     required this.recordId,
     this.retryDio,
+    this.embedded = false,
   });
 
   final String recordId;
   final Dio? retryDio;
+
+  /// Shown beside the list on wide layouts: no back button.
+  final bool embedded;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -40,8 +44,11 @@ class RequestDetailsScreen extends ConsumerWidget {
 
     if (record == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Request')),
-        body: const Center(
+        appBar: AppBar(
+          title: const Text('Request'),
+          automaticallyImplyLeading: !embedded,
+        ),
+        body: Center(
           child: Text(
             'This request was evicted from the buffer.',
             style: TextStyle(color: PulseTheme.textSecondary),
@@ -55,7 +62,8 @@ class RequestDetailsScreen extends ConsumerWidget {
       length: 5,
       child: Scaffold(
         appBar: AppBar(
-          titleSpacing: 0,
+          automaticallyImplyLeading: !embedded,
+          titleSpacing: embedded ? 16 : 0,
           title: Row(
             children: [
               MethodChip(method: r.method),
@@ -89,7 +97,7 @@ class RequestDetailsScreen extends ConsumerWidget {
             ),
             if (retryDio != null)
               IconButton(
-                tooltip: 'Retry',
+                tooltip: 'Replay request',
                 icon: const Icon(Icons.replay_rounded),
                 onPressed: () => _retry(context, r),
               ),
@@ -127,13 +135,12 @@ class RequestDetailsScreen extends ConsumerWidget {
     if (dio == null) return;
     final messenger = ScaffoldMessenger.of(context);
     messenger.showSnackBar(
-      SnackBar(content: Text('Retrying ${record.method} ${record.endpoint}…')),
+      SnackBar(content: Text('Replaying ${record.method} ${record.endpoint}…')),
     );
     try {
       await dio.request<dynamic>(
         record.url,
         data: _retryBody(record),
-        queryParameters: record.queryParameters,
         options: Options(
           method: record.method,
           headers: _nonRedactedHeaders(record),
@@ -145,7 +152,13 @@ class RequestDetailsScreen extends ConsumerWidget {
   }
 
   Object? _retryBody(NetworkRecord r) {
-    if (r.isMultipart) return null;
+    final mp = r.multipart;
+    if (mp != null) {
+      // File contents are not retained, so only the text fields are replayed.
+      return FormData.fromMap(
+        Map<String, dynamic>.from((mp['fields'] as Map?) ?? const {}),
+      );
+    }
     final body = r.requestBody;
     if (body is String || body is Map || body is List) return body;
     return null;
@@ -155,7 +168,10 @@ class RequestDetailsScreen extends ConsumerWidget {
     if (r.requestHeaders.isEmpty) return null;
     return {
       for (final e in r.requestHeaders.entries)
-        if (e.value != Sanitizer.redactedPlaceholder) e.key: e.value,
+        if (e.value != Sanitizer.redactedPlaceholder &&
+            e.key.toLowerCase() != 'content-length' &&
+            !(r.isMultipart && e.key.toLowerCase() == 'content-type'))
+          e.key: e.value,
     };
   }
 }

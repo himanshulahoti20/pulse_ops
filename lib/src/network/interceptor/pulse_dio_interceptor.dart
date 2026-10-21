@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import '../../crash/breadcrumb.dart';
 import '../../crash/crash_reporter.dart';
@@ -8,6 +9,7 @@ import '../../core/pulse_event_exporter.dart';
 import '../../core/pulse_ops_config.dart';
 import '../models/network_record.dart';
 import '../store/network_store.dart';
+import '../throttle.dart';
 import '../utils/sanitizer.dart';
 
 const String _kPulseRequestIdKey = '__pulseops_request_id__';
@@ -23,12 +25,14 @@ class PulseDioInterceptor extends Interceptor {
     required BreadcrumbTrail breadcrumbs,
     Sanitizer? sanitizer,
     PulseEventExporter? eventExporter,
+    ValueListenable<NetworkThrottle>? throttle,
   })  : _store = store,
         _config = config,
         _crashReporter = crashReporter,
         _breadcrumbs = breadcrumbs,
         _sanitizer = sanitizer ?? Sanitizer(config.sanitizeKeys),
-        _eventExporter = eventExporter;
+        _eventExporter = eventExporter,
+        _throttle = throttle;
 
   final NetworkStore _store;
   final PulseOpsConfig _config;
@@ -36,6 +40,7 @@ class PulseDioInterceptor extends Interceptor {
   final BreadcrumbTrail _breadcrumbs;
   final Sanitizer _sanitizer;
   final PulseEventExporter? _eventExporter;
+  final ValueListenable<NetworkThrottle>? _throttle;
 
   int _counter = 0;
 
@@ -45,10 +50,10 @@ class PulseDioInterceptor extends Interceptor {
   }
 
   @override
-  void onRequest(
+  Future<void> onRequest(
     RequestOptions options,
     RequestInterceptorHandler handler,
-  ) {
+  ) async {
     final id = _nextId();
     final startedAt = DateTime.now();
     options.extra[_kPulseRequestIdKey] = id;
@@ -65,7 +70,8 @@ class PulseDioInterceptor extends Interceptor {
       requestHeaders: _sanitizer.sanitizeHeaders(_stringify(options.headers)),
       queryParameters: Map<String, dynamic>.from(options.queryParameters),
       requestBody: isMultipart
-          ? _describeMultipart(options.data as FormData)
+          ? _sanitizer
+              .sanitizeBody(_describeMultipart(options.data as FormData))
           : _sanitizer.sanitizeBody(_normalizeBody(options.data)),
       isMultipart: isMultipart,
       requestSizeBytes: _estimateBytes(options.data),
@@ -77,14 +83,34 @@ class PulseDioInterceptor extends Interceptor {
       data: {'url': record.url},
     );
 
+    final throttle = _throttle?.value ?? NetworkThrottle.none;
+    if (throttle == NetworkThrottle.offline) {
+      handler.reject(
+        DioException.connectionError(
+          requestOptions: options,
+          reason: 'Simulated offline mode (PulseOps network throttle)',
+        ),
+        true,
+      );
+      return;
+    }
+    await _delay(
+      Duration(milliseconds: throttle.latencyMs) +
+          throttle.transferTime(record.requestSizeBytes),
+    );
+
     handler.next(options);
   }
 
   @override
-  void onResponse(
+  Future<void> onResponse(
     Response<dynamic> response,
     ResponseInterceptorHandler handler,
-  ) {
+  ) async {
+    await _delay(
+      (_throttle?.value ?? NetworkThrottle.none)
+          .transferTime(_estimateBytes(response.data)),
+    );
     _completeRecord(
       options: response.requestOptions,
       statusCode: response.statusCode,
@@ -161,6 +187,9 @@ class PulseDioInterceptor extends Interceptor {
     return updated;
   }
 
+  Future<void> _delay(Duration d) =>
+      d == Duration.zero ? Future<void>.value() : Future<void>.delayed(d);
+
   Map<String, dynamic> _stringify(Map<String, dynamic> input) {
     final out = <String, dynamic>{};
     input.forEach((k, v) {
@@ -187,6 +216,7 @@ class PulseDioInterceptor extends Interceptor {
 
   Map<String, dynamic> _describeMultipart(FormData data) {
     return {
+      'boundary': data.boundary,
       'fields': {for (final f in data.fields) f.key: f.value},
       'files': data.files
           .map((e) => {
@@ -201,10 +231,11 @@ class PulseDioInterceptor extends Interceptor {
 
   int? _estimateBytes(Object? data) {
     if (data == null) return null;
-    if (data is String) return data.length;
+    if (data is String) return utf8.encode(data).length;
     if (data is List<int>) return data.length;
+    if (data is FormData) return data.length;
     try {
-      return jsonEncode(data).length;
+      return utf8.encode(jsonEncode(data)).length;
     } catch (_) {
       return null;
     }

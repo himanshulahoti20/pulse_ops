@@ -1,5 +1,8 @@
 import 'package:flutter/foundation.dart';
 
+import '../network/throttle.dart';
+import '../ui/theme/pulse_theme.dart';
+
 /// How the inspector is presented when the overlay launcher is tapped or
 /// [PulseOps.openInspector] is called.
 enum InspectorPresentation {
@@ -45,6 +48,13 @@ class PulseOpsConfig {
     this.enableMemoryMonitor = true,
     this.memorySampleIntervalSeconds = 2,
     this.memorySnapshotBufferSize = 120,
+    this.theme = PulsePalette.dark,
+    this.extraThemes = const <PulsePalette>[],
+    this.compactMode = false,
+    this.enableInspectorAnimations = true,
+    this.networkThrottle = NetworkThrottle.none,
+    this.maxWebSocketSessions = 20,
+    this.maxWebSocketMessages = 200,
   });
 
   /// Whether PulseOps should remain active in release builds.
@@ -123,6 +133,30 @@ class PulseOpsConfig {
   /// Number of [MemorySnapshot] entries kept in the ring buffer.
   final int memorySnapshotBufferSize;
 
+  /// Palette the inspector opens with. Defaults to [PulsePalette.dark].
+  final PulsePalette theme;
+
+  /// Additional palettes offered next to [PulsePalette.builtIn] in the
+  /// inspector's settings sheet.
+  final List<PulsePalette> extraThemes;
+
+  /// Tighter list and tile spacing. Can also be toggled in the settings sheet.
+  final bool compactMode;
+
+  /// Entrance animations for inspector rows. Can also be toggled in the
+  /// settings sheet.
+  final bool enableInspectorAnimations;
+
+  /// Initial simulated network condition applied by [PulseDioInterceptor].
+  /// Change it at runtime via [PulseOps.throttle].
+  final NetworkThrottle networkThrottle;
+
+  /// Maximum number of WebSocket connections kept in the log.
+  final int maxWebSocketSessions;
+
+  /// Maximum number of messages kept per WebSocket connection.
+  final int maxWebSocketMessages;
+
   PulseOpsConfig copyWith({
     bool? enableInRelease,
     int? maxRecords,
@@ -142,6 +176,13 @@ class PulseOpsConfig {
     bool? enableMemoryMonitor,
     int? memorySampleIntervalSeconds,
     int? memorySnapshotBufferSize,
+    PulsePalette? theme,
+    List<PulsePalette>? extraThemes,
+    bool? compactMode,
+    bool? enableInspectorAnimations,
+    NetworkThrottle? networkThrottle,
+    int? maxWebSocketSessions,
+    int? maxWebSocketMessages,
   }) {
     return PulseOpsConfig(
       enableInRelease: enableInRelease ?? this.enableInRelease,
@@ -169,6 +210,14 @@ class PulseOpsConfig {
           memorySampleIntervalSeconds ?? this.memorySampleIntervalSeconds,
       memorySnapshotBufferSize:
           memorySnapshotBufferSize ?? this.memorySnapshotBufferSize,
+      theme: theme ?? this.theme,
+      extraThemes: extraThemes ?? this.extraThemes,
+      compactMode: compactMode ?? this.compactMode,
+      enableInspectorAnimations:
+          enableInspectorAnimations ?? this.enableInspectorAnimations,
+      networkThrottle: networkThrottle ?? this.networkThrottle,
+      maxWebSocketSessions: maxWebSocketSessions ?? this.maxWebSocketSessions,
+      maxWebSocketMessages: maxWebSocketMessages ?? this.maxWebSocketMessages,
     );
   }
 }

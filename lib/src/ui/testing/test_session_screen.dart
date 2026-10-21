@@ -103,7 +103,7 @@ class _StatusCard extends StatelessWidget {
               const Spacer(),
               Text(
                 '${session.duration.inMilliseconds} ms',
-                style: const TextStyle(
+                style: TextStyle(
                   color: PulseTheme.textSecondary,
                   fontFamily: 'monospace',
                   fontSize: 13,
@@ -152,14 +152,13 @@ class _Row extends StatelessWidget {
           width: 110,
           child: Text(
             label,
-            style:
-                const TextStyle(color: PulseTheme.textSecondary, fontSize: 12),
+            style: TextStyle(color: PulseTheme.textSecondary, fontSize: 12),
           ),
         ),
         Expanded(
           child: Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               color: PulseTheme.textPrimary,
               fontSize: 12,
               fontFamily: 'monospace',
@@ -190,11 +189,11 @@ class _FailureCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
               Icon(Icons.error_outline_rounded,
                   color: PulseTheme.error, size: 16),
-              SizedBox(width: 6),
+              const SizedBox(width: 6),
               Text(
                 'Failure',
                 style: TextStyle(
@@ -208,7 +207,7 @@ class _FailureCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             session.failureMessage!,
-            style: const TextStyle(
+            style: TextStyle(
               color: PulseTheme.textPrimary,
               fontSize: 12,
               fontFamily: 'monospace',
@@ -217,7 +216,7 @@ class _FailureCard extends StatelessWidget {
           ),
           if (session.stackTrace != null) ...[
             const SizedBox(height: 10),
-            const Text(
+            Text(
               'Stack trace',
               style: TextStyle(
                 color: PulseTheme.textSecondary,
@@ -228,7 +227,7 @@ class _FailureCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               session.stackTrace!.split('\n').take(12).join('\n'),
-              style: const TextStyle(
+              style: TextStyle(
                 color: PulseTheme.textSecondary,
                 fontSize: 10,
                 fontFamily: 'monospace',
@@ -288,7 +287,7 @@ class _NetworkRow extends StatelessWidget {
           Expanded(
             child: Text(
               record.endpoint,
-              style: const TextStyle(
+              style: TextStyle(
                 color: PulseTheme.textPrimary,
                 fontSize: 12,
                 fontFamily: 'monospace',
@@ -312,7 +311,7 @@ class _NetworkRow extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             '${record.duration.inMilliseconds} ms',
-            style: const TextStyle(
+            style: TextStyle(
               color: PulseTheme.textSecondary,
               fontSize: 11,
               fontFamily: 'monospace',
@@ -393,7 +392,7 @@ class _EventRow extends StatelessWidget {
                       const Spacer(),
                       Text(
                         _fmtTime(event.timestamp),
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: PulseTheme.textSecondary,
                           fontSize: 10,
                           fontFamily: 'monospace',
@@ -416,7 +415,7 @@ class _EventRow extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       '${event.duration!.inMilliseconds} ms',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: PulseTheme.textSecondary,
                         fontSize: 10,
                         fontFamily: 'monospace',
@@ -505,7 +504,7 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       title,
-      style: const TextStyle(
+      style: TextStyle(
         color: PulseTheme.textSecondary,
         fontSize: 11,
         fontWeight: FontWeight.w700,

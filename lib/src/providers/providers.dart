@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/pulse_ops_config.dart';
@@ -7,6 +8,8 @@ import '../memory/memory_store.dart';
 import '../memory/tracked_object.dart';
 import '../network/models/network_record.dart';
 import '../network/store/network_store.dart';
+import '../network/throttle.dart';
+import '../websocket/websocket_log.dart';
 import '../performance/frame_metric.dart';
 import '../performance/performance_store.dart';
 import '../testing/test_session.dart';
@@ -32,17 +35,34 @@ final performanceStoreProvider = Provider<PerformanceStore>((ref) {
 // ── Network ────────────────────────────────────────────────────────────────
 
 /// Reactive list of captured network records (newest first).
-final networkRecordsProvider = StreamProvider<List<NetworkRecord>>((ref) {
+final networkRecordsProvider =
+    StreamProvider<List<NetworkRecord>>((ref) async* {
   final store = ref.watch(networkStoreProvider);
-  return store.stream.asBroadcastStream();
+  // The store's stream does not replay, so seed with what it already holds;
+  // otherwise the inspector stays empty until the next request arrives.
+  yield store.records;
+  yield* store.stream;
+});
+
+final throttleProvider = Provider<ValueNotifier<NetworkThrottle>>((ref) {
+  throw UnimplementedError('Throttle must be provided via overrides');
+});
+
+final webSocketLogProvider = Provider<WebSocketLogStore>((ref) {
+  throw UnimplementedError('WebSocketLogStore must be provided via overrides');
+});
+
+final webSocketSessionsProvider = StreamProvider<List<WebSocketSession>>((ref) {
+  return ref.watch(webSocketLogProvider).stream;
 });
 
 // ── Performance ────────────────────────────────────────────────────────────
 
 /// Reactive list of frame metrics from [PerformanceStore].
-final frameMetricsProvider = StreamProvider<List<FrameMetric>>((ref) {
+final frameMetricsProvider = StreamProvider<List<FrameMetric>>((ref) async* {
   final store = ref.watch(performanceStoreProvider);
-  return store.stream.asBroadcastStream();
+  yield store.frames;
+  yield* store.stream;
 });
 
 // ── Memory ─────────────────────────────────────────────────────────────────
@@ -52,22 +72,26 @@ final memoryStoreProvider = Provider<MemoryStore>((ref) {
 });
 
 /// Reactive list of RSS snapshots from [MemoryStore].
-final memorySnapshotsProvider = StreamProvider<List<MemorySnapshot>>((ref) {
+final memorySnapshotsProvider =
+    StreamProvider<List<MemorySnapshot>>((ref) async* {
   final store = ref.watch(memoryStoreProvider);
-  return store.stream.asBroadcastStream();
+  yield store.snapshots;
+  yield* store.stream;
 }).select((async) => async.maybeWhen(
-      data: (s) => s,
-      orElse: () => const <MemorySnapshot>[],
-    ));
+          data: (s) => s,
+          orElse: () => const <MemorySnapshot>[],
+        ));
 
 /// Reactive list of objects that have not been disposed within the leak threshold.
-final potentialLeaksProvider = StreamProvider<List<TrackedObject>>((ref) {
+final potentialLeaksProvider =
+    StreamProvider<List<TrackedObject>>((ref) async* {
   final store = ref.watch(memoryStoreProvider);
-  return store.objectStream.asBroadcastStream();
+  yield store.trackedObjects;
+  yield* store.objectStream;
 }).select((async) => async.maybeWhen(
-      data: (objects) => objects.where((o) => o.isPotentialLeak).toList(),
-      orElse: () => const <TrackedObject>[],
-    ));
+          data: (objects) => objects.where((o) => o.isPotentialLeak).toList(),
+          orElse: () => const <TrackedObject>[],
+        ));
 
 // ── Testing ────────────────────────────────────────────────────────────────
 
@@ -76,9 +100,10 @@ final testStoreProvider = Provider<TestStore>((ref) {
 });
 
 /// Reactive list of test sessions (newest first).
-final testSessionsProvider = StreamProvider<List<TestSession>>((ref) {
+final testSessionsProvider = StreamProvider<List<TestSession>>((ref) async* {
   final store = ref.watch(testStoreProvider);
-  return store.stream.asBroadcastStream();
+  yield store.sessions;
+  yield* store.stream;
 }).select((async) => async.maybeWhen(
       data: (s) => s,
       orElse: () => const <TestSession>[],

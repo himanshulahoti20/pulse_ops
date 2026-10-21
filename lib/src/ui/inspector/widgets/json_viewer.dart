@@ -39,7 +39,7 @@ class JsonViewer extends StatelessWidget {
       ),
       child: Text(
         text,
-        style: const TextStyle(
+        style: TextStyle(
           color: PulseTheme.textSecondary,
           fontStyle: FontStyle.italic,
         ),
@@ -70,7 +70,7 @@ class _PlainBlock extends StatelessWidget {
       raw: text,
       child: SelectableText(
         text,
-        style: const TextStyle(
+        style: TextStyle(
           color: PulseTheme.textPrimary,
           fontFamily: 'monospace',
           fontSize: 12.5,
@@ -91,7 +91,7 @@ class _HighlightedBlock extends StatelessWidget {
       raw: text,
       child: SelectableText.rich(
         TextSpan(
-          style: const TextStyle(
+          style: TextStyle(
             fontFamily: 'monospace',
             fontSize: 12.5,
             height: 1.45,

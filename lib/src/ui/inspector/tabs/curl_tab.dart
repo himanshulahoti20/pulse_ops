@@ -20,7 +20,7 @@ class CurlTab extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Text(
+              Text(
                 'cURL',
                 style: TextStyle(
                   color: PulseTheme.textSecondary,
@@ -60,7 +60,7 @@ class CurlTab extends StatelessWidget {
               child: SingleChildScrollView(
                 child: SelectableText(
                   curl,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: PulseTheme.textPrimary,
                     fontFamily: 'monospace',
                     fontSize: 12.5,

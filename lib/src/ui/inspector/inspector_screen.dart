@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -8,8 +10,11 @@ import '../../network/models/network_record.dart';
 import '../../network/utils/log_exporter.dart';
 import '../../providers/providers.dart';
 import '../memory/memory_screen.dart';
+import '../settings/settings_sheet.dart';
+import '../websocket/websocket_screen.dart';
 import '../performance/performance_screen.dart';
 import '../testing/test_screen.dart';
+import '../theme/pulse_scope.dart';
 import '../theme/pulse_theme.dart';
 import 'request_details_screen.dart';
 import 'widgets/empty_state.dart';
@@ -39,6 +44,15 @@ class _InspectorScreenState extends ConsumerState<InspectorScreen> {
 
   static const _methods = <String>['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
 
+  /// Wide layouts (tablets, landscape) show the selected request beside the
+  /// list instead of pushing a new route.
+  static const _wideBreakpoint = 840.0;
+
+  String? _selectedId;
+
+  // Rows already shown once, so the entrance animation only plays for new ones.
+  final _seen = <String>{};
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -58,41 +72,42 @@ class _InspectorScreenState extends ConsumerState<InspectorScreen> {
       appBar: AppBar(
         title: const Text('PulseOps'),
         actions: [
-          IconButton(
-            tooltip: 'Memory',
-            icon: const Icon(Icons.memory_rounded),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => Theme(
-                  data: Theme.of(context),
-                  child: const MemoryScreen(),
+          PopupMenuButton<VoidCallback>(
+            tooltip: 'Tools',
+            icon: const Icon(Icons.apps_rounded),
+            color: PulseTheme.surfaceAlt,
+            onSelected: (open) => open(),
+            itemBuilder: (_) => [
+              for (final (icon, label, page) in [
+                (Icons.memory_rounded, 'Memory', const MemoryScreen()),
+                (Icons.speed_rounded, 'Performance', const PerformanceScreen()),
+                (
+                  Icons.swap_vert_rounded,
+                  'WebSockets',
+                  const WebSocketScreen()
                 ),
-              ),
-            ),
-          ),
-          IconButton(
-            tooltip: 'Performance',
-            icon: const Icon(Icons.speed_rounded),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => Theme(
-                  data: Theme.of(context),
-                  child: const PerformanceScreen(),
+                if (ref.read(pulseOpsConfigProvider).enableTestObservability)
+                  (Icons.science_rounded, 'Tests', const TestScreen()),
+              ])
+                PopupMenuItem<VoidCallback>(
+                  value: () => pushPulse<void>(context, page),
+                  child: Row(children: [
+                    Icon(icon, size: 18, color: PulseTheme.accent),
+                    const SizedBox(width: 10),
+                    Text(label,
+                        style: TextStyle(color: PulseTheme.textPrimary)),
+                  ]),
                 ),
+              PopupMenuItem<VoidCallback>(
+                value: () => showPulseSettings(context, ref),
+                child: Row(children: [
+                  Icon(Icons.tune_rounded, size: 18, color: PulseTheme.accent),
+                  const SizedBox(width: 10),
+                  Text('Settings',
+                      style: TextStyle(color: PulseTheme.textPrimary)),
+                ]),
               ),
-            ),
-          ),
-          IconButton(
-            tooltip: 'Tests',
-            icon: const Icon(Icons.science_rounded),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => Theme(
-                  data: Theme.of(context),
-                  child: const TestScreen(),
-                ),
-              ),
-            ),
+            ],
           ),
           IconButton(
             tooltip: 'Export logs',
@@ -115,132 +130,179 @@ class _InspectorScreenState extends ConsumerState<InspectorScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 6, 16, 8),
-            child: TextField(
-              controller: _searchController,
-              style: const TextStyle(
-                color: PulseTheme.textPrimary,
-                fontFamily: 'monospace',
-              ),
-              decoration: InputDecoration(
-                hintText: 'Search by URL, method, status…',
-                prefixIcon: const Icon(Icons.search_rounded,
-                    color: PulseTheme.textSecondary, size: 20),
-                suffixIcon: filter.search.isEmpty
-                    ? null
-                    : IconButton(
-                        icon: const Icon(Icons.close_rounded, size: 18),
-                        onPressed: () {
-                          _searchController.clear();
-                          ref.read(inspectorFilterProvider.notifier).update(
-                                (s) => s.copyWith(search: ''),
-                              );
-                        },
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final wide = constraints.maxWidth >= _wideBreakpoint;
+          final listPane = _buildListPane(context, records, filter, wide);
+          if (!wide) return listPane;
+          return Row(
+            children: [
+              SizedBox(width: 380, child: listPane),
+              VerticalDivider(width: 1, color: PulseTheme.border),
+              Expanded(
+                child: _selectedId == null
+                    ? const EmptyState(
+                        title: 'Select a request',
+                        subtitle: 'Pick a request on the left to inspect it.',
+                      )
+                    : RequestDetailsScreen(
+                        key: ValueKey(_selectedId),
+                        recordId: _selectedId!,
+                        retryDio: widget.retryDio,
+                        embedded: true,
                       ),
               ),
-              onChanged: (v) => ref
-                  .read(inspectorFilterProvider.notifier)
-                  .update((s) => s.copyWith(search: v)),
-            ),
-          ),
-          SizedBox(
-            height: 40,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              children: [
-                _FilterChip(
-                  label: 'Failed',
-                  selected: filter.failedOnly,
-                  onTap: () => ref
-                      .read(inspectorFilterProvider.notifier)
-                      .update((s) => s.copyWith(failedOnly: !s.failedOnly)),
-                ),
-                const SizedBox(width: 8),
-                _FilterChip(
-                  label: 'Slow',
-                  selected: filter.slowOnly,
-                  onTap: () => ref
-                      .read(inspectorFilterProvider.notifier)
-                      .update((s) => s.copyWith(slowOnly: !s.slowOnly)),
-                ),
-                const SizedBox(width: 8),
-                const _Divider(),
-                const SizedBox(width: 8),
-                for (final m in _methods) ...[
-                  _FilterChip(
-                    label: m,
-                    selected: filter.method == m,
-                    onTap: () =>
-                        ref.read(inspectorFilterProvider.notifier).update((s) {
-                      if (s.method == m) {
-                        return s.copyWith(clearMethod: true);
-                      }
-                      return s.copyWith(method: m);
-                    }),
-                  ),
-                  const SizedBox(width: 8),
-                ],
-                const _Divider(),
-                const SizedBox(width: 8),
-                for (final family in [
-                  StatusFamily.s2xx,
-                  StatusFamily.s3xx,
-                  StatusFamily.s4xx,
-                  StatusFamily.s5xx,
-                ]) ...[
-                  _FilterChip(
-                    label: _familyLabel(family),
-                    selected: filter.statusFamily == family,
-                    onTap: () => ref
-                        .read(inspectorFilterProvider.notifier)
-                        .update((s) => s.copyWith(
-                              statusFamily: s.statusFamily == family
-                                  ? StatusFamily.all
-                                  : family,
-                            )),
-                  ),
-                  const SizedBox(width: 8),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(height: 4),
-          Expanded(
-            child: records.isEmpty
-                ? const EmptyState(
-                    title: 'No requests yet',
-                    subtitle:
-                        'PulseOps is listening. Fire a request from your app to see it here in real time.',
-                  )
-                : ListView.separated(
-                    controller: widget.scrollController,
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                    itemCount: records.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 8),
-                    itemBuilder: (context, index) {
-                      final r = records[index];
-                      return RequestTile(
-                        record: r,
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute<void>(
-                              builder: (_) => RequestDetailsScreen(
-                                recordId: r.id,
-                                retryDio: widget.retryDio,
-                              ),
-                            ),
-                          );
-                        },
-                      );
-                    },
-                  ),
-          ),
-        ],
+            ],
+          );
+        },
       ),
+    );
+  }
+
+  Widget _buildListPane(
+    BuildContext context,
+    List<NetworkRecord> records,
+    InspectorFilter filter,
+    bool wide,
+  ) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 6, 16, 8),
+          child: TextField(
+            controller: _searchController,
+            style: TextStyle(
+              color: PulseTheme.textPrimary,
+              fontFamily: 'monospace',
+            ),
+            decoration: InputDecoration(
+              hintText: 'Search by URL, method, status…',
+              prefixIcon: Icon(Icons.search_rounded,
+                  color: PulseTheme.textSecondary, size: 20),
+              suffixIcon: filter.search.isEmpty
+                  ? null
+                  : IconButton(
+                      icon: const Icon(Icons.close_rounded, size: 18),
+                      onPressed: () {
+                        _searchController.clear();
+                        ref.read(inspectorFilterProvider.notifier).update(
+                              (s) => s.copyWith(search: ''),
+                            );
+                      },
+                    ),
+            ),
+            onChanged: (v) => ref
+                .read(inspectorFilterProvider.notifier)
+                .update((s) => s.copyWith(search: v)),
+          ),
+        ),
+        SizedBox(
+          height: 40,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            children: [
+              _FilterChip(
+                label: 'Failed',
+                selected: filter.failedOnly,
+                onTap: () => ref
+                    .read(inspectorFilterProvider.notifier)
+                    .update((s) => s.copyWith(failedOnly: !s.failedOnly)),
+              ),
+              const SizedBox(width: 8),
+              _FilterChip(
+                label: 'Slow',
+                selected: filter.slowOnly,
+                onTap: () => ref
+                    .read(inspectorFilterProvider.notifier)
+                    .update((s) => s.copyWith(slowOnly: !s.slowOnly)),
+              ),
+              const SizedBox(width: 8),
+              const _Divider(),
+              const SizedBox(width: 8),
+              for (final m in _methods) ...[
+                _FilterChip(
+                  label: m,
+                  selected: filter.method == m,
+                  onTap: () =>
+                      ref.read(inspectorFilterProvider.notifier).update((s) {
+                    if (s.method == m) {
+                      return s.copyWith(clearMethod: true);
+                    }
+                    return s.copyWith(method: m);
+                  }),
+                ),
+                const SizedBox(width: 8),
+              ],
+              const _Divider(),
+              const SizedBox(width: 8),
+              for (final family in [
+                StatusFamily.s2xx,
+                StatusFamily.s3xx,
+                StatusFamily.s4xx,
+                StatusFamily.s5xx,
+              ]) ...[
+                _FilterChip(
+                  label: _familyLabel(family),
+                  selected: filter.statusFamily == family,
+                  onTap: () => ref
+                      .read(inspectorFilterProvider.notifier)
+                      .update((s) => s.copyWith(
+                            statusFamily: s.statusFamily == family
+                                ? StatusFamily.all
+                                : family,
+                          )),
+                ),
+                const SizedBox(width: 8),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 4),
+        Expanded(
+          child: records.isEmpty
+              ? const EmptyState(
+                  title: 'No requests yet',
+                  subtitle:
+                      'PulseOps is listening. Fire a request from your app to see it here in real time.',
+                )
+              : ListView.separated(
+                  controller: widget.scrollController,
+                  padding: EdgeInsets.fromLTRB(
+                    16,
+                    8,
+                    16,
+                    PulseTheme.compact.value ? 12 : 24,
+                  ),
+                  itemCount: records.length,
+                  separatorBuilder: (_, __) => SizedBox(
+                    height: PulseTheme.compact.value ? 4 : 8,
+                  ),
+                  itemBuilder: (context, index) {
+                    final r = records[index];
+                    return RequestTile(
+                      key: ValueKey(r.id),
+                      record: r,
+                      animate: PulseTheme.animations.value && _seen.add(r.id),
+                      selected: wide && r.id == _selectedId,
+                      onTap: () {
+                        if (wide) {
+                          setState(() => _selectedId = r.id);
+                          return;
+                        }
+                        pushPulse<void>(
+                          context,
+                          RequestDetailsScreen(
+                            recordId: r.id,
+                            retryDio: widget.retryDio,
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+        ),
+      ],
     );
   }
 
@@ -259,8 +321,8 @@ class _InspectorScreenState extends ConsumerState<InspectorScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Padding(
-                padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
@@ -318,7 +380,7 @@ class _InspectorScreenState extends ConsumerState<InspectorScreen> {
         ShareParams(
           files: [
             XFile.fromData(
-              Uint8List.fromList(payload.codeUnits),
+              Uint8List.fromList(utf8.encode(payload)),
               name: filename,
               mimeType: format == LogExportFormat.json
                   ? 'application/json'
@@ -357,14 +419,14 @@ class _ExportTile extends StatelessWidget {
       leading: Icon(icon, color: PulseTheme.accent),
       title: Text(
         title,
-        style: const TextStyle(
+        style: TextStyle(
           color: PulseTheme.textPrimary,
           fontWeight: FontWeight.w600,
         ),
       ),
       subtitle: Text(
         subtitle,
-        style: const TextStyle(color: PulseTheme.textSecondary, fontSize: 12),
+        style: TextStyle(color: PulseTheme.textSecondary, fontSize: 12),
       ),
       onTap: onTap,
     );

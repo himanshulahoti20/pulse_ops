@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import 'graphql_info.dart';
+
 /// Lifecycle of a captured network call.
 enum NetworkStatus {
   pending,
@@ -74,6 +76,17 @@ class NetworkRecord {
     } catch (_) {
       return '';
     }
+  }
+
+  /// The GraphQL operation carried by this request, if any.
+  GraphQLInfo? get graphql =>
+      GraphQLInfo.tryParse(requestBody, queryParameters);
+
+  /// Field/file description of a multipart request (see
+  /// [PulseDioInterceptor]); `null` for non-multipart records.
+  Map<String, dynamic>? get multipart {
+    final b = requestBody;
+    return isMultipart && b is Map ? b.cast<String, dynamic>() : null;
   }
 
   bool get isSuccess =>

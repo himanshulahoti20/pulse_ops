@@ -8,8 +8,11 @@ import '../../memory/memory_store.dart';
 import '../../network/store/network_store.dart';
 import '../../performance/performance_store.dart';
 import '../../providers/providers.dart';
+import '../../network/throttle.dart';
 import '../../testing/test_store.dart';
+import '../../websocket/websocket_log.dart';
 import '../inspector/inspector_screen.dart';
+import '../theme/pulse_scope.dart';
 import '../theme/pulse_theme.dart';
 import 'shake_detector.dart';
 
@@ -23,6 +26,8 @@ Future<void> showPulseInspector(
   required PerformanceStore performanceStore,
   required MemoryStore memoryStore,
   required TestStore testStore,
+  required WebSocketLogStore webSocketLog,
+  required ValueNotifier<NetworkThrottle> throttle,
   Dio? retryDio,
 }) {
   final navigator = Navigator.of(context, rootNavigator: true);
@@ -33,6 +38,8 @@ Future<void> showPulseInspector(
     performanceStoreProvider.overrideWithValue(performanceStore),
     memoryStoreProvider.overrideWithValue(memoryStore),
     testStoreProvider.overrideWithValue(testStore),
+    webSocketLogProvider.overrideWithValue(webSocketLog),
+    throttleProvider.overrideWithValue(throttle),
   ];
 
   if (config.inspectorPresentation == InspectorPresentation.fullScreen) {
@@ -41,10 +48,7 @@ Future<void> showPulseInspector(
         fullscreenDialog: true,
         builder: (_) => ProviderScope(
           overrides: overrides,
-          child: Theme(
-            data: PulseTheme.build(),
-            child: InspectorScreen(retryDio: retryDio),
-          ),
+          child: PulseThemed(child: InspectorScreen(retryDio: retryDio)),
         ),
       ),
     );
@@ -54,14 +58,13 @@ Future<void> showPulseInspector(
     context: navigator.context,
     isScrollControlled: true,
     useRootNavigator: true,
+    // Lift the M3 640dp cap so tablets get the master-detail layout.
+    constraints: const BoxConstraints(maxWidth: double.infinity),
     backgroundColor: Colors.transparent,
     barrierColor: Colors.black.withValues(alpha: 0.6),
     builder: (_) => ProviderScope(
       overrides: overrides,
-      child: Theme(
-        data: PulseTheme.build(),
-        child: _InspectorSheet(retryDio: retryDio),
-      ),
+      child: PulseThemed(child: _InspectorSheet(retryDio: retryDio)),
     ),
   );
 }
@@ -124,6 +127,8 @@ class PulseOverlay extends StatefulWidget {
     required this.performanceStore,
     required this.memoryStore,
     required this.testStore,
+    required this.webSocketLog,
+    required this.throttle,
     this.retryDio,
   });
 
@@ -134,6 +139,8 @@ class PulseOverlay extends StatefulWidget {
   final PerformanceStore performanceStore;
   final MemoryStore memoryStore;
   final TestStore testStore;
+  final WebSocketLogStore webSocketLog;
+  final ValueNotifier<NetworkThrottle> throttle;
   final Dio? retryDio;
 
   @override
@@ -196,6 +203,8 @@ class _PulseOverlayState extends State<PulseOverlay> {
         performanceStore: widget.performanceStore,
         memoryStore: widget.memoryStore,
         testStore: widget.testStore,
+        webSocketLog: widget.webSocketLog,
+        throttle: widget.throttle,
         retryDio: widget.retryDio,
       );
     } finally {
@@ -231,7 +240,7 @@ class _OverlayButton extends StatelessWidget {
               ),
             ],
           ),
-          child: const Icon(
+          child: Icon(
             Icons.graphic_eq_rounded,
             color: PulseTheme.accent,
             size: 22,

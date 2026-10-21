@@ -10,10 +10,14 @@ import '../memory/memory_monitor.dart';
 import '../memory/memory_store.dart';
 import '../network/interceptor/pulse_dio_interceptor.dart';
 import '../network/store/network_store.dart';
+import '../network/throttle.dart';
+import '../network/utils/sanitizer.dart';
+import '../websocket/websocket_log.dart';
 import '../performance/fps_tracker.dart';
 import '../performance/performance_store.dart';
 import '../providers/providers.dart';
 import '../testing/test_store.dart';
+import '../ui/theme/pulse_theme.dart';
 import '../ui/overlay/pulse_overlay.dart';
 import 'pulse_event_exporter.dart';
 import 'pulse_ops_config.dart';
@@ -37,6 +41,8 @@ class PulseOps {
     required this.performanceStore,
     required this.memoryStore,
     required this.testStore,
+    required this.webSocketLog,
+    required this.throttle,
     this.eventExporter,
   });
 
@@ -66,6 +72,14 @@ class PulseOps {
   /// in your test files to track widget test logs, API calls, assertions,
   /// and failure diagnostics.
   final TestStore testStore;
+
+  /// Log of WebSocket connections; call `webSocketLog.open(url)` to start
+  /// recording one. See [WebSocketLogStore].
+  final WebSocketLogStore webSocketLog;
+
+  /// Simulated network condition applied to every request that goes through
+  /// [dioInterceptor]. Set `.value` to change it at runtime.
+  final ValueNotifier<NetworkThrottle> throttle;
 
   /// Optional sink that receives every failed request and every crash so the
   /// host app can forward them to its own analytics backend.
@@ -120,7 +134,11 @@ class PulseOps {
       config: effectiveConfig,
       eventExporter: eventExporter,
     );
+    final throttle = ValueNotifier<NetworkThrottle>(
+      effectiveConfig.networkThrottle,
+    );
     final interceptor = PulseDioInterceptor(
+      throttle: throttle,
       store: store,
       config: effectiveConfig,
       crashReporter: reporter,
@@ -136,6 +154,15 @@ class PulseOps {
         MemoryStore(maxSnapshots: effectiveConfig.memorySnapshotBufferSize);
 
     final testStore = TestStore(maxSessions: effectiveConfig.maxTestSessions);
+    final webSocketLog = WebSocketLogStore(
+      maxSessions: effectiveConfig.maxWebSocketSessions,
+      maxMessagesPerSession: effectiveConfig.maxWebSocketMessages,
+      sanitizer: Sanitizer(effectiveConfig.sanitizeKeys),
+    );
+
+    PulseTheme.palette.value = effectiveConfig.theme;
+    PulseTheme.compact.value = effectiveConfig.compactMode;
+    PulseTheme.animations.value = effectiveConfig.enableInspectorAnimations;
 
     if (installGlobalErrorHandlers && enabled) {
       diagnostics.installGlobalErrorHandlers();
@@ -160,6 +187,8 @@ class PulseOps {
       performanceStore: perfStore,
       memoryStore: memStore,
       testStore: testStore,
+      webSocketLog: webSocketLog,
+      throttle: throttle,
       eventExporter: eventExporter,
     );
 
@@ -178,6 +207,8 @@ class PulseOps {
         performanceStoreProvider.overrideWithValue(performanceStore),
         memoryStoreProvider.overrideWithValue(memoryStore),
         testStoreProvider.overrideWithValue(testStore),
+        webSocketLogProvider.overrideWithValue(webSocketLog),
+        throttleProvider.overrideWithValue(throttle),
       ],
       child: PulseOverlay(
         config: config,
@@ -186,6 +217,8 @@ class PulseOps {
         performanceStore: performanceStore,
         memoryStore: memoryStore,
         testStore: testStore,
+        webSocketLog: webSocketLog,
+        throttle: throttle,
         retryDio: retryDio,
         child: child,
       ),
@@ -202,6 +235,8 @@ class PulseOps {
       performanceStore: performanceStore,
       memoryStore: memoryStore,
       testStore: testStore,
+      webSocketLog: webSocketLog,
+      throttle: throttle,
       retryDio: retryDio,
     );
   }
@@ -234,6 +269,8 @@ class PulseOps {
     _instance?.performanceStore.dispose();
     _instance?.memoryStore.dispose();
     _instance?.testStore.dispose();
+    _instance?.webSocketLog.dispose();
+    _instance?.throttle.dispose();
     _instance = null;
   }
 }
