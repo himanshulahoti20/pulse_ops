@@ -14,12 +14,24 @@ class CurlBuilder {
     }
 
     r.requestHeaders.forEach((key, value) {
+      // curl generates its own multipart boundary for -F.
+      if (r.isMultipart && key.toLowerCase() == 'content-type') return;
       final escaped = _shellEscape('$key: $value');
       parts.add('-H $escaped');
     });
 
+    final multipart = r.multipart;
     final body = r.requestBody;
-    if (body != null && _hasBody(r.method)) {
+    if (multipart != null) {
+      // Files are not retained; point at a local path the user can fill in.
+      (multipart['fields'] as Map?)?.forEach((k, v) {
+        parts.add('-F ${_shellEscape('$k=$v')}');
+      });
+      for (final f in (multipart['files'] as List?) ?? const []) {
+        final name = (f as Map)['filename'] ?? 'file';
+        parts.add('-F ${_shellEscape('${f['field']}=@/path/to/$name')}');
+      }
+    } else if (body != null && _hasBody(r.method)) {
       final encoded = _encodeBody(body);
       if (encoded.isNotEmpty) {
         parts.add('--data ${_shellEscape(encoded)}');

@@ -4,6 +4,51 @@ All notable changes to **PulseOps** will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/) and
 this project adheres to [Semantic Versioning](https://semver.org/).
 
+## 1.5.0 — 2026-10-21
+
+### 🌐 Advanced Networking
+
+- **GraphQL support** — requests carrying a GraphQL document (POST body, batched
+  array, or GET `?query=`) show their operation type/name in the list and a
+  dedicated Query / Variables view. `NetworkRecord.graphql` exposes the parsed
+  `GraphQLInfo`.
+- **Multipart viewer** — fields and files (name, content type, size, boundary)
+  are listed in the Request tab. Multipart field values are now sanitized, and
+  the cURL export emits `-F` parts instead of a JSON blob.
+- **WebSocket logs** — `PulseOps.instance.webSocketLog.open(url)` returns a
+  session you log `sent` / `received` / `close` on (or wrap a stream with
+  `trackIncoming`). Payloads are JSON-decoded and sanitized; browse them under
+  *Tools → WebSockets*.
+- **Request replay** — the retry button is now "Replay request"; multipart text
+  fields are replayed too.
+- **Network throttling simulation** — `NetworkThrottle` (LTE, Fast 3G, Slow 3G,
+  Offline) adds latency and bandwidth delay to requests made through the Dio
+  interceptor. Set `PulseOpsConfig.networkThrottle` or `PulseOps.instance.throttle`
+  or use the Settings sheet.
+
+### 🎨 UI
+
+- **Custom themes** — `PulsePalette` (built-in Dark, Midnight, Light, High
+  contrast) plus your own via `PulseOpsConfig.theme` / `extraThemes`.
+- **Compact mode** and **inspector animations** toggles (config + Settings sheet).
+- **Tablet layout** — at ≥ 840 dp the inspector shows a list / detail split.
+- Inspector tools (Memory, Performance, WebSockets, Tests, Settings) moved into a
+  single *Tools* menu.
+
+### 🐛 Fixes
+
+- The inspector list, performance, memory and test screens were empty when
+  opened until the next event arrived; providers now start with the store's
+  current contents.
+- Screens pushed from the inspector lost the PulseOps theme and, when opened
+  via `openInspector` without `wrap`, the Riverpod scope.
+- Replaying a request duplicated its query string.
+- Exported log files were corrupted for non-ASCII content (UTF-16 code units
+  were written as bytes).
+- Request/response size was counted in characters, not bytes, and was missing
+  for multipart requests.
+- The Tests button ignored `enableTestObservability`.
+
 ## 1.4.0 — 2026-06-25
 
 ### 🧪 Test Observability

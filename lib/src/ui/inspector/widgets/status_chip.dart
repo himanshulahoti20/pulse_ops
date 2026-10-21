@@ -22,7 +22,7 @@ class StatusChip extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (record.status == NetworkStatus.pending)
-            const SizedBox(
+            SizedBox(
               height: 8,
               width: 8,
               child: CircularProgressIndicator(

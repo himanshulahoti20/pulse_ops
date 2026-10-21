@@ -6,6 +6,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../providers/providers.dart';
 import '../../testing/test_report_exporter.dart';
 import '../../testing/test_session.dart';
+import '../theme/pulse_scope.dart';
 import '../theme/pulse_theme.dart';
 import 'test_session_screen.dart';
 
@@ -63,8 +64,8 @@ class TestScreen extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
@@ -78,26 +79,24 @@ class TestScreen extends ConsumerWidget {
               ),
             ),
             ListTile(
-              leading: const Icon(Icons.data_object_rounded,
-                  color: PulseTheme.accent),
-              title: const Text('JSON',
+              leading:
+                  Icon(Icons.data_object_rounded, color: PulseTheme.accent),
+              title: Text('JSON',
                   style: TextStyle(
                       color: PulseTheme.textPrimary,
                       fontWeight: FontWeight.w600)),
-              subtitle: const Text(
-                  'Structured report with events and network calls.',
+              subtitle: Text('Structured report with events and network calls.',
                   style:
                       TextStyle(color: PulseTheme.textSecondary, fontSize: 12)),
               onTap: () => Navigator.of(ctx).pop(TestReportFormat.json),
             ),
             ListTile(
-              leading:
-                  const Icon(Icons.notes_rounded, color: PulseTheme.accent),
-              title: const Text('Plain text',
+              leading: Icon(Icons.notes_rounded, color: PulseTheme.accent),
+              title: Text('Plain text',
                   style: TextStyle(
                       color: PulseTheme.textPrimary,
                       fontWeight: FontWeight.w600)),
-              subtitle: const Text('Readable summary per test session.',
+              subtitle: Text('Readable summary per test session.',
                   style:
                       TextStyle(color: PulseTheme.textSecondary, fontSize: 12)),
               onTap: () => Navigator.of(ctx).pop(TestReportFormat.text),
@@ -205,7 +204,7 @@ class _SummaryBar extends StatelessWidget {
           if (total > 0) ...[
             Text(
               '${(passed / total * 100).toStringAsFixed(0)}%',
-              style: const TextStyle(
+              style: TextStyle(
                 color: PulseTheme.accent,
                 fontWeight: FontWeight.w700,
                 fontSize: 16,
@@ -213,7 +212,7 @@ class _SummaryBar extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 4),
-            const Text(
+            Text(
               'pass rate',
               style: TextStyle(color: PulseTheme.textSecondary, fontSize: 11),
             ),
@@ -246,7 +245,7 @@ class _Stat extends StatelessWidget {
         ),
         Text(
           label,
-          style: const TextStyle(color: PulseTheme.textSecondary, fontSize: 11),
+          style: TextStyle(color: PulseTheme.textSecondary, fontSize: 11),
         ),
       ],
     );
@@ -270,14 +269,8 @@ class _SessionTile extends StatelessWidget {
 
     return InkWell(
       borderRadius: BorderRadius.circular(12),
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) => Theme(
-            data: Theme.of(context),
-            child: TestSessionScreen(session: session),
-          ),
-        ),
-      ),
+      onTap: () =>
+          pushPulse<void>(context, TestSessionScreen(session: session)),
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
@@ -306,7 +299,7 @@ class _SessionTile extends StatelessWidget {
                 children: [
                   Text(
                     session.name,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: PulseTheme.textPrimary,
                       fontWeight: FontWeight.w600,
                       fontSize: 13,
@@ -317,14 +310,13 @@ class _SessionTile extends StatelessWidget {
                   if (session.group != null)
                     Text(
                       session.group!,
-                      style: const TextStyle(
+                      style: TextStyle(
                           color: PulseTheme.textSecondary, fontSize: 11),
                     ),
                   if (session.isFailed && session.failureMessage != null)
                     Text(
                       session.failureMessage!,
-                      style: const TextStyle(
-                          color: PulseTheme.error, fontSize: 11),
+                      style: TextStyle(color: PulseTheme.error, fontSize: 11),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -337,7 +329,7 @@ class _SessionTile extends StatelessWidget {
               children: [
                 Text(
                   '${session.duration.inMilliseconds} ms',
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: PulseTheme.textSecondary,
                     fontSize: 11,
                     fontFamily: 'monospace',
@@ -364,7 +356,7 @@ class _SessionTile extends StatelessWidget {
               ],
             ),
             const SizedBox(width: 4),
-            const Icon(Icons.chevron_right_rounded,
+            Icon(Icons.chevron_right_rounded,
                 color: PulseTheme.textSecondary, size: 18),
           ],
         ),
@@ -418,11 +410,11 @@ class _EmptyState extends StatelessWidget {
                 color: PulseTheme.accent.withValues(alpha: 0.08),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.science_rounded,
+              child: Icon(Icons.science_rounded,
                   color: PulseTheme.accent, size: 34),
             ),
             const SizedBox(height: 20),
-            const Text(
+            Text(
               'No test sessions yet',
               style: TextStyle(
                 color: PulseTheme.textPrimary,
@@ -431,7 +423,7 @@ class _EmptyState extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'Call PulseTestObserver.beginTest() in your test setUp to start tracking.',
               textAlign: TextAlign.center,
               style: TextStyle(

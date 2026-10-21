@@ -55,5 +55,29 @@ void main() {
       expect(out, contains('page=2'));
       expect(out, contains('q=hi'));
     });
+
+    test('emits -F parts for multipart and drops the boundary header', () {
+      final r = NetworkRecord(
+        id: '1',
+        method: 'POST',
+        url: 'https://api.example.com/upload',
+        startedAt: DateTime.utc(2024),
+        isMultipart: true,
+        requestHeaders: const {
+          'Content-Type': 'multipart/form-data; boundary=x'
+        },
+        requestBody: const {
+          'fields': {'name': 'pulse'},
+          'files': [
+            {'field': 'file', 'filename': 'note.txt'}
+          ],
+        },
+      );
+      final out = builder.build(r);
+      expect(out, contains("-F 'name=pulse'"));
+      expect(out, contains("-F 'file=@/path/to/note.txt'"));
+      expect(out, isNot(contains('Content-Type')));
+      expect(out, isNot(contains('--data')));
+    });
   });
 }

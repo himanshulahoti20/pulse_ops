@@ -132,12 +132,12 @@ class _SpikeWarning extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.bolt_rounded, color: PulseTheme.error, size: 16),
+          Icon(Icons.bolt_rounded, color: PulseTheme.error, size: 16),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               '$count memory spike${count == 1 ? '' : 's'} detected — RSS jumped >20% above the rolling average.',
-              style: const TextStyle(color: PulseTheme.error, fontSize: 12),
+              style: TextStyle(color: PulseTheme.error, fontSize: 12),
             ),
           ),
         ],
@@ -164,7 +164,7 @@ class _LeakList extends StatelessWidget {
       child: Column(
         children: [
           for (var i = 0; i < shown.length; i++) ...[
-            if (i > 0) const Divider(height: 1, color: PulseTheme.border),
+            if (i > 0) Divider(height: 1, color: PulseTheme.border),
             _LeakRow(obj: shown[i]),
           ],
         ],
@@ -187,12 +187,12 @@ class _LeakRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       child: Row(
         children: [
-          const Icon(Icons.leak_add_rounded, color: PulseTheme.error, size: 16),
+          Icon(Icons.leak_add_rounded, color: PulseTheme.error, size: 16),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               obj.type,
-              style: const TextStyle(
+              style: TextStyle(
                 color: PulseTheme.textPrimary,
                 fontSize: 12,
                 fontFamily: 'monospace',
@@ -201,7 +201,7 @@ class _LeakRow extends StatelessWidget {
           ),
           Text(
             'alive $ageLabel',
-            style: const TextStyle(
+            style: TextStyle(
               color: PulseTheme.error,
               fontSize: 11,
               fontFamily: 'monospace',
@@ -272,7 +272,7 @@ class _LifecycleSummary extends StatelessWidget {
                     Expanded(
                       child: Text(
                         e.key,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: PulseTheme.textPrimary,
                           fontSize: 11,
                           fontFamily: 'monospace',
@@ -281,7 +281,7 @@ class _LifecycleSummary extends StatelessWidget {
                     ),
                     Text(
                       '${e.value}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: PulseTheme.accent,
                         fontSize: 11,
                         fontFamily: 'monospace',
@@ -316,8 +316,7 @@ class _Pill extends StatelessWidget {
                 fontWeight: FontWeight.w800,
                 fontFamily: 'monospace')),
         Text(label,
-            style:
-                const TextStyle(color: PulseTheme.textSecondary, fontSize: 10)),
+            style: TextStyle(color: PulseTheme.textSecondary, fontSize: 10)),
       ],
     );
   }
@@ -340,18 +339,18 @@ class _RebuildList extends StatelessWidget {
       child: Column(
         children: [
           for (var i = 0; i < entries.length; i++) ...[
-            if (i > 0) const Divider(height: 1, color: PulseTheme.border),
+            if (i > 0) Divider(height: 1, color: PulseTheme.border),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
               child: Row(
                 children: [
-                  const Icon(Icons.replay_rounded,
+                  Icon(Icons.replay_rounded,
                       color: PulseTheme.accent, size: 14),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       entries[i].key,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: PulseTheme.textPrimary,
                         fontSize: 12,
                         fontFamily: 'monospace',
@@ -392,7 +391,7 @@ class _SectionHeader extends StatelessWidget {
         padding: const EdgeInsets.only(bottom: 10),
         child: Text(
           title.toUpperCase(),
-          style: const TextStyle(
+          style: TextStyle(
             color: PulseTheme.textSecondary,
             fontSize: 11,
             fontWeight: FontWeight.w700,
@@ -439,8 +438,8 @@ class _StatCard extends StatelessWidget {
             ),
             const SizedBox(height: 2),
             Text(label,
-                style: const TextStyle(
-                    color: PulseTheme.textSecondary, fontSize: 11)),
+                style:
+                    TextStyle(color: PulseTheme.textSecondary, fontSize: 11)),
           ],
         ),
       );
@@ -463,7 +462,7 @@ class _ChartCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(label,
-                style: const TextStyle(
+                style: TextStyle(
                     color: PulseTheme.textSecondary,
                     fontSize: 11,
                     fontFamily: 'monospace')),
@@ -483,8 +482,7 @@ class _EmptyChart extends StatelessWidget {
         height: 80,
         child: Center(
           child: Text(message,
-              style: const TextStyle(
-                  color: PulseTheme.textSecondary, fontSize: 12),
+              style: TextStyle(color: PulseTheme.textSecondary, fontSize: 12),
               textAlign: TextAlign.center),
         ),
       );
@@ -504,13 +502,13 @@ class _EmptyCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            const Icon(Icons.check_circle_rounded,
+            Icon(Icons.check_circle_rounded,
                 color: PulseTheme.success, size: 16),
             const SizedBox(width: 10),
             Expanded(
               child: Text(message,
-                  style: const TextStyle(
-                      color: PulseTheme.textSecondary, fontSize: 12)),
+                  style:
+                      TextStyle(color: PulseTheme.textSecondary, fontSize: 12)),
             ),
           ],
         ),

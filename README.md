@@ -56,14 +56,17 @@ PulseOps ships with five focused capabilities:
 
 ## ✨ Highlights
 
-- 🎨 **Beautiful dark, Material 3 inspector** with monospace JSON viewer and
+- 🎨 **Beautiful Material 3 inspector** (dark by default, themeable) with monospace JSON viewer and
   syntax highlighting
 - 🔌 **One-line Dio integration** — works with `GET`, `POST`, `PUT`, `PATCH`,
   `DELETE`, and `multipart/form-data`
 - 🔍 **Search, filter by method / status family / slow / failed** — live and
   composable
 - 📋 **Copy buttons everywhere** — headers, body, full cURL
-- ↻ **Retry requests** from the inspector with your real Dio client
+- 🧬 **GraphQL, multipart and WebSocket viewers**, request **replay**, and
+  **network throttling** (LTE / 3G / offline)
+- 🎨 **Custom themes**, compact mode, animations, and a tablet split layout
+- ↻ **Replay requests** from the inspector with your real Dio client
 - ⚡ **Real-time FPS monitor** — sparkline chart, dropped-frame list, startup
   time, and API latency bar chart
 - 🧠 **Memory monitor** — RSS sparkline, spike warnings, leak list, widget
@@ -91,7 +94,7 @@ PulseOps ships with five focused capabilities:
 
 ```yaml
 dependencies:
-  pulse_ops: ^1.4.0
+  pulse_ops: ^1.5.0
   dio: ^5.4.0
 ```
 
@@ -172,6 +175,38 @@ await PulseOps.initialize(
 Pass your authenticated `Dio` instance to `wrap(retryDio:)` or
 `openInspector(retryDio:)`. The retry button in the app bar reissues the
 captured request via that client.
+
+### GraphQL
+
+Requests with a GraphQL document are detected automatically: the list shows
+`query GetUser`, and the Request tab splits query and variables.
+
+### WebSocket logs
+
+```dart
+final session = PulseOps.instance.webSocketLog.open(url);
+final channel = WebSocketChannel.connect(Uri.parse(url));
+final incoming = session.trackIncoming(channel.stream); // logs + closes
+void send(String m) { session.sent(m); channel.sink.add(m); }
+```
+
+Browse connections under **Tools → WebSockets**. Payloads are sanitized.
+
+### Network throttling
+
+`PulseOps.instance.throttle.value = NetworkThrottle.slow3g;` (or pick one in
+**Tools → Settings**) delays every request made through the PulseOps Dio
+interceptor; `offline` fails them immediately.
+
+### Themes & layout
+
+```dart
+PulseOpsConfig(
+  theme: PulsePalette.midnight,
+  extraThemes: [PulsePalette(name: 'Brand', background: ..., accent: ...)],
+  compactMode: true,
+)
+```
 
 ### Multipart support
 
@@ -512,6 +547,14 @@ const PulseOpsConfig(
 
   // — Crash —
   maxBreadcrumbs: 50,
+
+  // — Inspector UI —
+  theme: PulsePalette.dark,                // + extraThemes: [...]
+  compactMode: false,
+  enableInspectorAnimations: true,
+  networkThrottle: NetworkThrottle.none,
+  maxWebSocketSessions: 20,
+  maxWebSocketMessages: 200,
 )
 ```
 
@@ -529,9 +572,11 @@ lib/
     ├── core/                              # facade + config + PulseEventExporter
     ├── network/
     │   ├── interceptor/                   # PulseDioInterceptor
-    │   ├── models/                        # NetworkRecord (with toJson/fromJson)
+    │   ├── models/                        # NetworkRecord, GraphQLInfo
     │   ├── store/                         # InMemoryNetworkStore, FileBackedNetworkStore
+    │   ├── throttle.dart                  # NetworkThrottle presets
     │   └── utils/                         # CurlBuilder, Sanitizer, LogExporter
+    ├── websocket/                         # WebSocketLogStore + sessions
     ├── performance/
     │   ├── frame_metric.dart              # FrameMetric value type
     │   ├── performance_store.dart         # ring-buffer + stream
@@ -553,8 +598,10 @@ lib/
     │   ├── performance/                   # PerformanceScreen + charts
     │   ├── memory/                        # MemoryScreen + RSS chart
     │   ├── testing/                       # TestScreen + TestSessionScreen
+    │   ├── websocket/                     # WebSocket list + message log
+    │   ├── settings/                      # theme / compact / throttle sheet
     │   ├── overlay/                       # draggable launcher + shake detector
-    │   └── theme/                         # dark Material 3 theme
+    │   └── theme/                         # PulsePalette + PulseTheme, scope helpers
     └── providers/                         # Riverpod scope
 ```
 
@@ -658,6 +705,7 @@ File('test-report.json').writeAsStringSync(report);
 
 ## 🛣 Roadmap
 
+- [x] GraphQL / multipart / WebSocket viewers, replay, throttling, themes *(v1.5)*
 - [x] Test observability — session tracking, API logs, timelines, report export *(v1.4)*
 - [x] Memory monitoring — RSS, leaks, lifecycle, rebuild tracking *(v1.3)*
 - [x] Persistent network store + unified event exporter *(v1.3)*

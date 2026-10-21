@@ -45,7 +45,7 @@ class HeadersTab extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: PulseTheme.textPrimary,
                     fontWeight: FontWeight.w700,
                   ),
@@ -73,8 +73,8 @@ class HeadersTab extends StatelessWidget {
             ),
           ),
           if (headers.isEmpty)
-            const Padding(
-              padding: EdgeInsets.fromLTRB(14, 4, 14, 14),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 4, 14, 14),
               child: Text(
                 'No headers',
                 style: TextStyle(color: PulseTheme.textSecondary),
@@ -99,7 +99,7 @@ class HeadersTab extends StatelessWidget {
                       width: 140,
                       child: Text(
                         e.key,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: PulseTheme.jsonKey,
                           fontFamily: 'monospace',
                           fontSize: 12.5,
@@ -110,7 +110,7 @@ class HeadersTab extends StatelessWidget {
                     Expanded(
                       child: SelectableText(
                         '${e.value}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: PulseTheme.textPrimary,
                           fontFamily: 'monospace',
                           fontSize: 12.5,

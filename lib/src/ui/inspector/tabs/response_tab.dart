@@ -27,13 +27,13 @@ class ResponseTab extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.error_outline_rounded,
+                Icon(Icons.error_outline_rounded,
                     color: PulseTheme.error, size: 18),
                 const SizedBox(width: 8),
                 Expanded(
                   child: SelectableText(
                     record.error!,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: PulseTheme.error,
                       fontFamily: 'monospace',
                       fontSize: 12.5,

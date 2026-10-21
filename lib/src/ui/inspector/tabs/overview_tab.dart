@@ -28,7 +28,7 @@ class OverviewTab extends StatelessWidget {
                 const Spacer(),
                 Text(
                   '${record.duration.inMilliseconds}ms',
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: PulseTheme.textSecondary,
                     fontFamily: 'monospace',
                   ),
@@ -38,7 +38,7 @@ class OverviewTab extends StatelessWidget {
             const SizedBox(height: 14),
             SelectableText(
               record.url,
-              style: const TextStyle(
+              style: TextStyle(
                 color: PulseTheme.textPrimary,
                 fontFamily: 'monospace',
                 fontSize: 13,
@@ -68,7 +68,7 @@ class OverviewTab extends StatelessWidget {
           _Card(
             accent: PulseTheme.error,
             children: [
-              const Text(
+              Text(
                 'Error',
                 style: TextStyle(
                   color: PulseTheme.error,
@@ -78,7 +78,7 @@ class OverviewTab extends StatelessWidget {
               const SizedBox(height: 6),
               SelectableText(
                 record.error!,
-                style: const TextStyle(
+                style: TextStyle(
                   color: PulseTheme.textPrimary,
                   fontFamily: 'monospace',
                   fontSize: 12.5,
@@ -114,13 +114,13 @@ class OverviewTab extends StatelessWidget {
             width: 110,
             child: Text(
               label,
-              style: const TextStyle(color: PulseTheme.textSecondary),
+              style: TextStyle(color: PulseTheme.textSecondary),
             ),
           ),
           Expanded(
             child: SelectableText(
               value,
-              style: const TextStyle(
+              style: TextStyle(
                 color: PulseTheme.textPrimary,
                 fontFamily: 'monospace',
               ),

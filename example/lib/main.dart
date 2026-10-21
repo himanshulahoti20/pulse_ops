@@ -135,6 +135,37 @@ class _HomeScreenState extends State<_HomeScreen> {
     } catch (_) {}
   }
 
+  Future<void> _graphql() async {
+    try {
+      await dio.post<dynamic>(
+        'https://countries.trevorblades.com/',
+        data: {
+          'operationName': 'Country',
+          'query':
+              'query Country(\$code: ID!) { country(code: \$code) { name } }',
+          'variables': {'code': 'IN'},
+        },
+      );
+    } catch (_) {}
+  }
+
+  /// Logs a fake WebSocket conversation; with `web_socket_channel` you would
+  /// wrap `channel.stream` in `session.trackIncoming(...)` instead.
+  void _webSocket() {
+    final session =
+        PulseOps.instance.webSocketLog.open('wss://echo.example.com/ws');
+    session.sent('{"type":"subscribe","channel":"prices","token":"secret"}');
+    session.received('{"type":"price","symbol":"PULSE","value":42.5}');
+    Future<void>.delayed(const Duration(seconds: 1), session.close);
+  }
+
+  void _toggleThrottle() {
+    final t = PulseOps.instance.throttle;
+    t.value = t.value == NetworkThrottle.none
+        ? NetworkThrottle.slow3g
+        : NetworkThrottle.none;
+  }
+
   // ── Crash ─────────────────────────────────────────────────────────────────
 
   void _crash(BuildContext context) {
@@ -361,6 +392,10 @@ class _HomeScreenState extends State<_HomeScreen> {
                 onPressed: _failing,
                 danger: true),
             _DemoButton(label: 'Multipart upload', onPressed: _multipart),
+            _DemoButton(label: 'GraphQL query', onPressed: _graphql),
+            _DemoButton(label: 'Log WebSocket session', onPressed: _webSocket),
+            _DemoButton(
+                label: 'Toggle Slow 3G throttle', onPressed: _toggleThrottle),
             const SizedBox(height: 24),
 
             // ── Memory ────────────────────────────────────────────────────

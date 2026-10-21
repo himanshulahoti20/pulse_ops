@@ -190,7 +190,7 @@ class _FrameDropList extends StatelessWidget {
       child: Column(
         children: [
           for (var i = 0; i < drops.length; i++) ...[
-            if (i > 0) const Divider(height: 1, color: PulseTheme.border),
+            if (i > 0) Divider(height: 1, color: PulseTheme.border),
             _DropRow(frame: drops[i]),
           ],
         ],
@@ -220,7 +220,7 @@ class _DropRow extends StatelessWidget {
           Expanded(
             child: Text(
               isSevere ? 'Severe jank — $ms ms' : 'Frame drop — $ms ms',
-              style: const TextStyle(
+              style: TextStyle(
                   color: PulseTheme.textPrimary,
                   fontSize: 12,
                   fontFamily: 'monospace'),
@@ -252,7 +252,7 @@ class _SectionHeader extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 10),
       child: Text(
         title.toUpperCase(),
-        style: const TextStyle(
+        style: TextStyle(
           color: PulseTheme.textSecondary,
           fontSize: 11,
           fontWeight: FontWeight.w700,
@@ -303,7 +303,7 @@ class _StatCard extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               color: PulseTheme.textSecondary,
               fontSize: 11,
             ),
@@ -333,7 +333,7 @@ class _ChartCard extends StatelessWidget {
         children: [
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               color: PulseTheme.textSecondary,
               fontSize: 11,
               fontFamily: 'monospace',
@@ -358,7 +358,7 @@ class _EmptyChart extends StatelessWidget {
       child: Center(
         child: Text(
           message,
-          style: const TextStyle(
+          style: TextStyle(
             color: PulseTheme.textSecondary,
             fontSize: 12,
           ),

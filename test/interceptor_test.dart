@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pulse_ops/pulse_ops.dart';
 
@@ -119,6 +120,54 @@ void main() {
       expect(r.status, NetworkStatus.error);
       expect(r.statusCode, 500);
       expect(reporter.nonFatals, isNotEmpty);
+    });
+
+    test('offline throttle rejects and records the failure', () async {
+      final throttle = ValueNotifier(NetworkThrottle.offline);
+      final d = Dio(BaseOptions(baseUrl: 'https://api.example.com'))
+        ..interceptors.add(PulseDioInterceptor(
+          store: store,
+          config: const PulseOpsConfig(),
+          crashReporter: reporter,
+          breadcrumbs: trail,
+          throttle: throttle,
+        ))
+        ..httpClientAdapter =
+            _StubAdapter((o) => ResponseBody.fromString('{}', 200));
+
+      await expectLater(d.get<dynamic>('/x'), throwsA(isA<DioException>()));
+      expect(store.records.single.status, NetworkStatus.error);
+    });
+
+    test('latency throttle slows the request', () async {
+      final throttle = ValueNotifier(NetworkThrottle.slow3g);
+      final d = Dio(BaseOptions(baseUrl: 'https://api.example.com'))
+        ..interceptors.add(PulseDioInterceptor(
+          store: store,
+          config: const PulseOpsConfig(),
+          crashReporter: reporter,
+          breadcrumbs: trail,
+          throttle: throttle,
+        ))
+        ..httpClientAdapter =
+            _StubAdapter((o) => ResponseBody.fromString('{}', 200));
+
+      await d.get<dynamic>('/x');
+      expect(store.records.single.duration.inMilliseconds,
+          greaterThanOrEqualTo(390));
+    });
+
+    test('multipart fields are sanitized and sized', () async {
+      dio.httpClientAdapter =
+          _StubAdapter((o) => ResponseBody.fromString('{}', 200));
+      await dio.post<dynamic>(
+        '/upload',
+        data: FormData.fromMap({'password': 'hunter2', 'name': 'pulse'}),
+      );
+      final r = store.records.single;
+      expect(r.multipart!['fields']['password'], Sanitizer.redactedPlaceholder);
+      expect(r.multipart!['fields']['name'], 'pulse');
+      expect(r.requestSizeBytes, isNotNull);
     });
   });
 }
