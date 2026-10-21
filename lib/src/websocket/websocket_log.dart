@@ -145,7 +145,9 @@ class WebSocketLogStore {
     if (raw is String) {
       Object? decoded = raw;
       try {
-        decoded = jsonDecode(raw);
+        // Only structured JSON is decoded; "123" or "true" stay text.
+        final j = jsonDecode(raw);
+        if (j is Map || j is List) decoded = j;
       } catch (_) {}
       return (
         _sanitizer?.sanitizeBody(decoded) ?? decoded,
